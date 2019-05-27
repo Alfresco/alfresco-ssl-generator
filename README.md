@@ -26,7 +26,8 @@ docker build -t alfresco/alfresco-base-ssl .
 Certificates generation script `run.sh` is based in `OpenSSL` and Java `keytool` programs, and it can be used in different scenarios:
 
 * *Docker Standalone*, as a local container generating `keystores` folder from environment variable values. Available from Linux, Windows and Mac OS X.
-* *Script Standalone*, as a local bash script from Linux operative systems.
+* *Bash Shell Script Standalone*, as a local bash script from Linux operative systems.
+* *Windows Batch Script Standalone*, as a local bash script from Windows operative systems.
 * *Docker Compose*, as a Docker service creating `keystores` folder from environment variable values. Available from Linux, Windows and Mac OS X.
 
 
@@ -93,7 +94,7 @@ $ docker run -v $PWD/keystores:/keystores -e KEY_SIZE=2048 -e ALFRESCO_VERSION=e
 Note that when `keystores` folder is not empty, the program exists without producing any keystore or truststore.
 
 
-### Script Standalone
+### Bash Shell Script Standalone
 
 When working on a *Linux* machine, shell script `ssl-tool/run.sh` can be used directly from command line. It's required to have `OpenSSL` and `keytool` programs available in the environment.
 
@@ -137,6 +138,53 @@ keystores/
 └── zeppelin
     ├── ssl.repo.client.keystore
     └── ssl.repo.client.truststore
+```
+
+Note that when `keystores` folder is not empty, the program exists without producing any keystore or truststore.
+
+
+### Windows Batch Script Standalone
+
+When working on a *Windows* machine, shell script `ssl-tool-win/run.cmd` can be used directly from command line. It's required to have `OpenSSL` and `keytool` programs available in the *PATH*.
+
+The parameters described above, can be used also from command line, but using following keywords:
+
+*  `-alfrescoversion` with the same values of ALFRESCO_VERSION
+*  `-keysize` with the same values of KEY_SIZE
+*  `-keystoretype` with the same values of KEYSTORE_TYPE
+*  `-keystorepass` with the same values of KEYSTORE_PASS
+*  `-truststoretype` with the same values of TRUSTSTORE_TYPE
+*  `-truststorepass` with the same values of TRUSTSTORE_PASS
+*  `-encstorepass` with the same values of ENC_STORE_PASS
+*  `-encmetadatapass` with the same values of ENC_METADATA_PASS
+*  `-cacertdname` with the same values of CA_CERT_DNAME
+*  `-repocertdname` with the same values of REPO_CERT_DNAME
+*  `-solrcertdname` with the same values of SOLR_CERT_DNAME
+
+For instance, the following command will produce `keystores` folder in a host folder named `keystores` using RSA key length of 2048 bits for Alfresco Enterprise.
+
+```bash
+C:\> cd ssl-tool-win
+
+C:\> run.cmd -keysize 2048 -alfrescoversion enterprise
+
+C:\>tree /F keystores
+├───alfresco
+│       keystore
+│       keystore-passwords.properties
+│       ssl-keystore-passwords.properties
+│       ssl-truststore-passwords.properties
+│       ssl.keystore
+│       ssl.truststore
+│
+├───client
+│       browser.p12
+│
+└───solr
+        ssl-keystore-passwords.properties
+        ssl-truststore-passwords.properties
+        ssl.repo.client.keystore
+        ssl.repo.client.truststore
 ```
 
 Note that when `keystores` folder is not empty, the program exists without producing any keystore or truststore.

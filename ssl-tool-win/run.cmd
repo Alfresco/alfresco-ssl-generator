@@ -120,19 +120,19 @@ IF NOT "%1"=="" (
   )
   IF "%1"=="-cacertdname" (
     SHIFT
-    SET CA_DNAME=%2
+    SET CA_DNAME=%~2
     SHIFT
     GOTO loop
   )
   IF "%1"=="-repocertdname" (
     SHIFT
-    SET REPO_CERT_DNAME=%2
+    SET REPO_CERT_DNAME=%~2
     SHIFT
     GOTO loop
   )
   IF "%1"=="-solrcertdname" (
     SHIFT
-    SET SOLR_CLIENT_CERT_DNAME=%2
+    SET SOLR_CLIENT_CERT_DNAME=%~2
     SHIFT
     GOTO loop
   )

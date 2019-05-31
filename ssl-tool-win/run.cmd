@@ -256,11 +256,11 @@ keytool -importcert -noprompt -alias ssl.repo.client -file %CERTIFICATES_DIR%\so
 -keystore %SOLR_KEYSTORES_DIR%\ssl.repo.client.truststore -storetype %TRUSTSTORE_TYPE% -storepass %TRUSTSTORE_PASS%
 
 REM Create SOLR TrustStore password file
-ECHO aliases=alfresco.ca,ssl.repo,ssl.repo.client >> %SOLR_KEYSTORES_DIR%\ssl-truststore-passwords.properties
-ECHO keystore.password=%TRUSTSTORE_PASS% >> %SOLR_KEYSTORES_DIR%\ssl-truststore-passwords.properties
-ECHO alfresco.ca.password=%TRUSTSTORE_PASS% >> %SOLR_KEYSTORES_DIR%\ssl-truststore-passwords.properties
-ECHO ssl.repo.password=%TRUSTSTORE_PASS% >> %SOLR_KEYSTORES_DIR%\ssl-truststore-passwords.properties
-ECHO ssl.repo.client.password=%TRUSTSTORE_PASS% >> %SOLR_KEYSTORES_DIR%\ssl-truststore-passwords.properties
+ECHO aliases=alfresco.ca,ssl.repo,ssl.repo.client>> %SOLR_KEYSTORES_DIR%\ssl-truststore-passwords.properties
+ECHO keystore.password=%TRUSTSTORE_PASS%>> %SOLR_KEYSTORES_DIR%\ssl-truststore-passwords.properties
+ECHO alfresco.ca.password=%TRUSTSTORE_PASS%>> %SOLR_KEYSTORES_DIR%\ssl-truststore-passwords.properties
+ECHO ssl.repo.password=%TRUSTSTORE_PASS%>> %SOLR_KEYSTORES_DIR%\ssl-truststore-passwords.properties
+ECHO ssl.repo.client.password=%TRUSTSTORE_PASS%>> %SOLR_KEYSTORES_DIR%\ssl-truststore-passwords.properties
 
 REM Include SOLR Certificate in SOLR Keystore
 keytool -importkeystore ^
@@ -275,10 +275,10 @@ keytool -importcert -noprompt -alias alfresco.ca -file ca\certs\ca.cert.pem ^
 -keystore %SOLR_KEYSTORES_DIR%\ssl.repo.client.keystore -storetype %KEYSTORE_TYPE% -storepass %KEYSTORE_PASS%
 
 REM Create SOLR Keystore password file
-ECHO aliases=ssl.alfresco.ca,ssl.repo.client >> %SOLR_KEYSTORES_DIR%\ssl-keystore-passwords.properties
-ECHO keystore.password=%KEYSTORE_PASS% >> %SOLR_KEYSTORES_DIR%\ssl-keystore-passwords.properties
-ECHO ssl.repo.client.password=%KEYSTORE_PASS% >> %SOLR_KEYSTORES_DIR%\ssl-keystore-passwords.properties
-ECHO ssl.alfresco.ca.password=%KEYSTORE_PASS% >> %SOLR_KEYSTORES_DIR%\ssl-keystore-passwords.properties
+ECHO aliases=ssl.alfresco.ca,ssl.repo.client>> %SOLR_KEYSTORES_DIR%\ssl-keystore-passwords.properties
+ECHO keystore.password=%KEYSTORE_PASS%>> %SOLR_KEYSTORES_DIR%\ssl-keystore-passwords.properties
+ECHO ssl.repo.client.password=%KEYSTORE_PASS%>> %SOLR_KEYSTORES_DIR%\ssl-keystore-passwords.properties
+ECHO ssl.alfresco.ca.password=%KEYSTORE_PASS%>> %SOLR_KEYSTORES_DIR%\ssl-keystore-passwords.properties
 
 
 REM --------------------
@@ -304,10 +304,10 @@ keytool -importcert -noprompt -alias ssl.repo.client -file %CERTIFICATES_DIR%\so
 -keystore %ALFRESCO_KEYSTORES_DIR%\ssl.truststore -storetype %TRUSTSTORE_TYPE% -storepass %TRUSTSTORE_PASS%
 
 REM Create Alfresco TrustStore password file
-ECHO aliases=alfresco.ca,ssl.repo.client >> %ALFRESCO_KEYSTORES_DIR%\ssl-truststore-passwords.properties
-ECHO keystore.password=%TRUSTSTORE_PASS% >> %ALFRESCO_KEYSTORES_DIR%\ssl-truststore-passwords.properties
-ECHO alfresco.ca.password=%TRUSTSTORE_PASS% >> %ALFRESCO_KEYSTORES_DIR%\ssl-truststore-passwords.properties
-ECHO ssl.repo.client=%TRUSTSTORE_PASS% >> %ALFRESCO_KEYSTORES_DIR%\ssl-truststore-passwords.properties
+ECHO aliases=alfresco.ca,ssl.repo.client>> %ALFRESCO_KEYSTORES_DIR%\ssl-truststore-passwords.properties
+ECHO keystore.password=%TRUSTSTORE_PASS%>> %ALFRESCO_KEYSTORES_DIR%\ssl-truststore-passwords.properties
+ECHO alfresco.ca.password=%TRUSTSTORE_PASS%>> %ALFRESCO_KEYSTORES_DIR%\ssl-truststore-passwords.properties
+ECHO ssl.repo.client=%TRUSTSTORE_PASS%>> %ALFRESCO_KEYSTORES_DIR%\ssl-truststore-passwords.properties
 
 REM Include Alfresco Certificate in Alfresco Keystore
 keytool -importkeystore ^
@@ -322,21 +322,21 @@ keytool -importcert -noprompt -alias ssl.alfresco.ca -file ca\certs\ca.cert.pem 
 -keystore %ALFRESCO_KEYSTORES_DIR%\ssl.keystore -storetype %KEYSTORE_TYPE% -storepass %KEYSTORE_PASS%
 
 REM Create Alfresco Keystore password file
-ECHO aliases=ssl.alfresco.ca,ssl.repo >> %ALFRESCO_KEYSTORES_DIR%\ssl-keystore-passwords.properties
-ECHO keystore.password=%KEYSTORE_PASS% >> %ALFRESCO_KEYSTORES_DIR%\ssl-keystore-passwords.properties
-ECHO ssl.repo.password=%KEYSTORE_PASS% >> %ALFRESCO_KEYSTORES_DIR%\ssl-keystore-passwords.properties
-ECHO ssl.alfresco.ca.password=%KEYSTORE_PASS% >> %ALFRESCO_KEYSTORES_DIR%\ssl-keystore-passwords.properties
+ECHO aliases=ssl.alfresco.ca,ssl.repo>> %ALFRESCO_KEYSTORES_DIR%\ssl-keystore-passwords.properties
+ECHO keystore.password=%KEYSTORE_PASS%>> %ALFRESCO_KEYSTORES_DIR%\ssl-keystore-passwords.properties
+ECHO ssl.repo.password=%KEYSTORE_PASS%>> %ALFRESCO_KEYSTORES_DIR%\ssl-keystore-passwords.properties
+ECHO ssl.alfresco.ca.password=%KEYSTORE_PASS%>> %ALFRESCO_KEYSTORES_DIR%\ssl-keystore-passwords.properties
 
 REM Generate Encryption Secret Key
 keytool -genseckey -alias metadata -keypass %ENC_METADATA_PASS% -storepass %ENC_STORE_PASS% -keystore %ALFRESCO_KEYSTORES_DIR%\keystore ^
 -storetype %ENC_STORE_TYPE% -keyalg DESede
 
 REM Create Alfresco Encryption password file
-ECHO aliases=metadata >> %ALFRESCO_KEYSTORES_DIR%\keystore-passwords.properties
-ECHO keystore.password=%ENC_STORE_PASS% >> %ALFRESCO_KEYSTORES_DIR%\keystore-passwords.properties
-ECHO metadata.keyData= >> %ALFRESCO_KEYSTORES_DIR%\keystore-passwords.properties
-ECHO metadata.algorithm=DESede >> %ALFRESCO_KEYSTORES_DIR%\keystore-passwords.properties
-ECHO metadata.password=%ENC_METADATA_PASS% >> %ALFRESCO_KEYSTORES_DIR%\keystore-passwords.properties
+ECHO aliases=metadata>> %ALFRESCO_KEYSTORES_DIR%\keystore-passwords.properties
+ECHO keystore.password=%ENC_STORE_PASS%>> %ALFRESCO_KEYSTORES_DIR%\keystore-passwords.properties
+ECHO metadata.keyData=>> %ALFRESCO_KEYSTORES_DIR%\keystore-passwords.properties
+ECHO metadata.algorithm=DESede>> %ALFRESCO_KEYSTORES_DIR%\keystore-passwords.properties
+ECHO metadata.password=%ENC_METADATA_PASS%>> %ALFRESCO_KEYSTORES_DIR%\keystore-passwords.properties
 
 
 REM --------------------

@@ -91,7 +91,7 @@ Both Oracle JRE 11 and OpenJDK JRE 11 can be used, just follow the installation 
 Both command line scripts and Docker Image resources can be parametrised by using external parameter values. Different options are described in the table below.
 
 | Script parameter name | Docker Parameter name | Description                  | Values                      |
-|-|-|-|
+|-|-|-|-|
 | -alfrescoversion      | ALFRESCO_VERSION      | Type of Alfresco Version     | `enterprise` or `community` |
 | -keysize              | KEY_SIZE              | RSA key length               | `1024`, `2048`, `4096`...   |
 | -keystoretype         | KEYSTORE_TYPE         | Type of the keystores (containing private keys)  | `PKCS12`, `JKS`, `JCEKS` |

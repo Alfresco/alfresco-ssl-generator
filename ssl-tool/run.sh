@@ -367,6 +367,11 @@ do
             SOLR_CLIENT_CERT_DNAME="$2"
             shift
         ;;
+        # DName for Browser certificate
+        -browsercertdname)
+            BROWSER_CLIENT_CERT_DNAME="$2"
+            shift
+        ;;
         *)
             echo "An invalid parameter was received: $1"
             echo "Allowed parameters:"
@@ -381,6 +386,7 @@ do
             echo "  -cacertdname"
             echo "  -repocertdname"
             echo "  -solrcertdname"
+            echo "  -browsercertdname"
             exit 1
         ;;
     esac

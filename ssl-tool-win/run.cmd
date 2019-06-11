@@ -138,6 +138,12 @@ IF NOT "%1"=="" (
     SHIFT
     GOTO loop
   )
+  IF "%1"=="-browsercertdname" (
+    SHIFT
+    SET BROWSER_CLIENT_CERT_DNAME=%~2
+    SHIFT
+    GOTO loop
+  )
   ECHO "An invalid parameter was received: %1"
   EXIT /b
 )

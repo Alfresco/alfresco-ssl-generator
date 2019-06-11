@@ -362,7 +362,7 @@ REM CLIENT
 REM --------------------
 
 REM Create client (browser) certificate
-keytool -importkeystore \
+keytool -importkeystore ^
 -srckeystore %CERTIFICATES_DIR%/browser.p12 -destkeystore %CLIENT_KEYSTORES_DIR%/browser.p12 ^
 -srcstoretype PKCS12 -deststoretype PKCS12 ^
 -srcstorepass %KEYSTORE_PASS% -deststorepass %KEYSTORE_PASS% ^

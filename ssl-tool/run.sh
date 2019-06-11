@@ -49,6 +49,8 @@ CA_DNAME="/C=GB/ST=UK/L=Maidenhead/O=Alfresco Software Ltd./OU=Unknown/CN=Custom
 REPO_CERT_DNAME="/C=GB/ST=UK/L=Maidenhead/O=Alfresco Software Ltd./OU=Unknown/CN=Custom Alfresco Repository"
 # Distinguished name of the Server Certificate for SOLR
 SOLR_CLIENT_CERT_DNAME="/C=GB/ST=UK/L=Maidenhead/O=Alfresco Software Ltd./OU=Unknown/CN=Custom Alfresco Repository Client"
+# Distinguished name of the Browser Certificate for SOLR
+BROWSER_CLIENT_CERT_DNAME="/C=GB/ST=UK/L=Maidenhead/O=Alfresco Software Ltd./OU=Unknown/CN=Custom Browser Client"
 
 # RSA key length (1024, 2048, 4096)
 KEY_SIZE=1024
@@ -179,6 +181,15 @@ function generate {
   openssl pkcs12 -export -out $CERTIFICATES_DIR/solr.p12 -inkey $CERTIFICATES_DIR/solr.key \
   -in $CERTIFICATES_DIR/solr.cer -password pass:$KEYSTORE_PASS -certfile ca/certs/ca.cert.pem
 
+  # Client Certificate for SOLR (issued by just generated CA)
+  openssl req -newkey rsa:$KEY_SIZE -nodes -out $CERTIFICATES_DIR/browser.csr -keyout $CERTIFICATES_DIR/browser.key \
+  -subj "$BROWSER_CLIENT_CERT_DNAME"
+
+  openssl ca -config openssl.cnf -extensions client_cert -passin pass:$KEYSTORE_PASS -batch -notext \
+  -in $CERTIFICATES_DIR/browser.csr -out $CERTIFICATES_DIR/browser.cer
+
+  openssl pkcs12 -export -out $CERTIFICATES_DIR/browser.p12 -inkey $CERTIFICATES_DIR/browser.key \
+  -in $CERTIFICATES_DIR/browser.cer -password pass:$KEYSTORE_PASS -certfile ca/certs/ca.cert.pem
 
   #
   # SOLR
@@ -286,11 +297,13 @@ function generate {
   #
 
   # Create client (browser) certificate
-  keytool -importkeystore -srckeystore ${ALFRESCO_KEYSTORES_DIR}/ssl.keystore \
-  -srcstorepass $KEYSTORE_PASS -srcstoretype $KEYSTORE_TYPE -srcalias ssl.repo \
-  -srckeypass $KEYSTORE_PASS -destkeystore ${CLIENT_KEYSTORES_DIR}/browser.p12 \
-  -deststoretype pkcs12 -deststorepass $KEYSTORE_PASS \
-  -destalias ssl.repo -destkeypass $KEYSTORE_PASS
+  keytool -importkeystore \
+  -srckeystore $CERTIFICATES_DIR/browser.p12 -destkeystore $CLIENT_KEYSTORES_DIR/browser.p12 \
+  -srcstoretype PKCS12 -deststoretype PKCS12 \
+  -srcstorepass $KEYSTORE_PASS -deststorepass $KEYSTORE_PASS \
+  -srcalias 1 -destalias browser \
+  -srckeypass $KEYSTORE_PASS -destkeypass $KEYSTORE_PASS \
+  -noprompt
 
 }
 

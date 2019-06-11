@@ -30,7 +30,7 @@ default_days      = 375
 preserve          = no
 policy            = policy_strict
 
-default_days = 36500
+default_days = 3650
 
 [ policy_strict ]
 # The root CA should only sign intermediate certificates that match.
@@ -88,7 +88,20 @@ subjectKeyIdentifier = hash
 authorityKeyIdentifier = keyid,issuer:always
 keyUsage = critical, digitalSignature, keyEncipherment
 extendedKeyUsage = serverAuth
+subjectAltName = @alt_names
+
+[ client_cert ]
+basicConstraints = CA:FALSE
+nsCertType = client
+nsComment = "OpenSSL Generated Client Certificate"
+subjectKeyIdentifier = hash
+authorityKeyIdentifier = keyid,issuer:always
+keyUsage = critical, digitalSignature, keyEncipherment
+extendedKeyUsage = clientAuth
 
 [ crl_ext ]
 # Extension for CRLs (`man x509v3_config`).
 authorityKeyIdentifier=keyid:always
+
+[alt_names]
+DNS.1   = localhost

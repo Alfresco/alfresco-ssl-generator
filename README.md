@@ -24,7 +24,7 @@ As HTTPs invocations happen between different Alfresco services, following relat
 
 * When accessing SOLR from a browser, the browser is client of SOLR
 
-  * Repository key must be installed on the browser in order to access SOLR Web Console
+  * Browser key must be installed on the browser in order to access SOLR Web Console
 
 
 Additionally, to support Alfresco *encryption* feature, a metadata cyphering key is generated and included on a *keystore* to be used by the Repository.
@@ -195,6 +195,26 @@ C:\> run.cmd -cacertdname "/C=GB/ST=UK/L=Maidenhead/O=Alfresco/OU=Unknown/CN=Win
 
 Note that when `keystores` folder is not empty, the program exists without producing any keystore or truststore.
 
+
+## Installing Browser certificate
+
+In order to access to SOLR Web Console, available by default at [https://localhost:8983/solr](https://localhost:8983/solr), browser certificate must be installed in your machine.
+
+For *Windows* systems, `client\browser.p12` file must be imported as new private certificate to `Windows Certificates` application.
+
+For *Mac OS X* systems, `client/browser.p12` file must be imported to `Keychain Access` application.
+
+Also setting the right options in these application to *trust* in this certificate is required.
+
+Once the certificate is installed, the following message should be showed by your browser when accessing to Solr Web Console:
+
+```
+Your connection is not private
+Attackers might be trying to steal your information from localhost (for example, passwords, messages or credit cards). Learn more
+NET::ERR_CERT_AUTHORITY_INVALID
+```
+
+As the certificate has been generated for `localhost`, this warning is expected. Just click on `Advanced >> Proceed` and use your browser certificate to access Solr Web Console.
 
 ## Docker Standalone
 

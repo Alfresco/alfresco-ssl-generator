@@ -103,6 +103,7 @@ Both command line scripts and Docker Image resources can be parametrised by usin
 | -cacertdname          | CA_CERT_DNAME         | Distinguished Name of the CA certificate, starting with slash and quoted | "/C=GB/ST=UK/L=Maidenhead/O=Alfresco Software Ltd./OU=Unknown/CN=Custom Alfresco CA" |
 | -repocertdname        | REPO_CERT_DNAME       | Distinguished Name of the Repository certificate, starting with slash and quoted | "/C=GB/ST=UK/L=Maidenhead/O=Alfresco Software Ltd./OU=Unknown/CN=Custom Alfresco Repository" |
 | -solrcertdname        | SOLR_CERT_DNAME       | Distinguished Name of the SOLR certificate, starting with slash and quoted | "/C=GB/ST=UK/L=Maidenhead/O=Alfresco Software Ltd./OU=Unknown/CN=Custom Alfresco Repository Client" |
+| -browsercertdname     | BROWSER_CERT_DNAME       | Distinguished Name of the BROWSER certificate, starting with slash and quoted | "/C=GB/ST=UK/L=Maidenhead/O=Alfresco Software Ltd./OU=Unknown/CN=Custom Browser Client" |
 
 
 ## Bash Shell Script Standalone (Linux, Mac OS X)
@@ -142,9 +143,10 @@ keystores/
 When using custom *DNames* for certificates, values must be set in quotes.
 
 ```bash
-$ ./run.sh -cacertdname "/C=GB/ST=UK/L=Maidenhead/O=Alfresco/OU=Unknown/CN=Windows Alfresco CA" \
+$ ./run.sh -cacertdname "/C=GB/ST=UK/L=Maidenhead/O=Alfresco/OU=Unknown/CN=Linux Alfresco CA" \
 -repocertdname "/C=GB/ST=UK/L=Maidenhead/O=Alfresco/OU=Unknown/CN=Repo" \
--solrcertdname "/C=GB/ST=UK/L=Maidenhead/O=Alfresco/OU=Unknown/CN=Solr"
+-solrcertdname "/C=GB/ST=UK/L=Maidenhead/O=Alfresco/OU=Unknown/CN=Solr" \
+-browsercertdname "/C=GB/ST=UK/L=Maidenhead/O=Alfresco/OU=Unknown/CN=Browser"
 ```
 
 Note that when `keystores` folder is not empty, the program exists without producing any keystore or truststore.
@@ -187,7 +189,8 @@ When using custom *DNames* for certificates, values must be set in quotes.
 ```bash
 C:\> run.cmd -cacertdname "/C=GB/ST=UK/L=Maidenhead/O=Alfresco/OU=Unknown/CN=Windows Alfresco CA" ^
 -repocertdname "/C=GB/ST=UK/L=Maidenhead/O=Alfresco/OU=Unknown/CN=Repo" ^
--solrcertdname "/C=GB/ST=UK/L=Maidenhead/O=Alfresco/OU=Unknown/CN=Solr"
+-solrcertdname "/C=GB/ST=UK/L=Maidenhead/O=Alfresco/OU=Unknown/CN=Solr" ^
+-browsercertdname "/C=GB/ST=UK/L=Maidenhead/O=Alfresco/OU=Unknown/CN=Browser"
 ```
 
 Note that when `keystores` folder is not empty, the program exists without producing any keystore or truststore.

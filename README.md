@@ -1,4 +1,4 @@
-# Welcome to Alfresco Docker Base SSL
+# Welcome to Alfresco SSL Generator
 
 This is a script automation for the generation of the required `keystores`, `truststores` and browser `certificates` for Alfresco configuration using Mutual TLS Authentication between Repository and SOLR. These same files can be obtained manually by using any other cryptographic tools.
 

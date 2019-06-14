@@ -294,3 +294,16 @@ ssl:
 ```
 
 Sample configurations for *Alfresco Enterprise* and *Alfresco Community* have been provided at `docker-compose` folder.
+
+
+## Known issues
+
+**"SEC_ERROR_REUSED_ISSUER_AND_SERIAL" error when accessing SOLR Web Console in Firefox***
+
+If you are using Alfresco SSL Generator for testing or developing and you issued the same CA Certificate more than one time, Firefox will complain when trying to access to SOLR Web Console ([https://localhost:8983/solr](https://localhost:8983/solr) by default).
+
+This problem is described at Bugzilla:
+
+[https://bugzilla.mozilla.org/show_bug.cgi?id=435013](https://bugzilla.mozilla.org/show_bug.cgi?id=435013)
+
+Apply any of the workarounds provided (as removing `cert8.db` or `cert9.db` file from your Firefox profile folder) in order to fix this problem.

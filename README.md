@@ -104,7 +104,11 @@ Both command line scripts and Docker Image resources can be parametrised by usin
 | -repocertdname        | REPO_CERT_DNAME       | Distinguished Name of the Repository certificate, starting with slash and quoted | "/C=GB/ST=UK/L=Maidenhead/O=Alfresco Software Ltd./OU=Unknown/CN=Custom Alfresco Repository" |
 | -solrcertdname        | SOLR_CERT_DNAME       | Distinguished Name of the SOLR certificate, starting with slash and quoted | "/C=GB/ST=UK/L=Maidenhead/O=Alfresco Software Ltd./OU=Unknown/CN=Custom Alfresco Repository Client" |
 | -browsercertdname     | BROWSER_CERT_DNAME       | Distinguished Name of the BROWSER certificate, starting with slash and quoted | "/C=GB/ST=UK/L=Maidenhead/O=Alfresco Software Ltd./OU=Unknown/CN=Custom Browser Client" |
+| -caservername         | CA_SERVER_NAME        | DNS Name for CA Server       | Any string, `localhost` by default        |
+| -alfrescoservername   | ALFRESCO_SERVER_NAME  | DNS Name for Alfresco Server | Any string, `localhost` by default        |
+| -solrservername       | SOLR_SERVER_NAME      | DNS Name for SOLR Server     | Any string, `localhost` by default        |
 
+When using Alfresco on an internal network, each server should have a different name. This names can be configured on the parameters named as `*servername`. In order to avoid browser complains about certificates, it's recommended to include the name of the server as `Alternative Name` in the certificate. This should be at least required for SOLR Web Console, as this application is only available in `https` when using this configuration. If you are working under a Web Proxy, use the name of this proxy for the `*servername` parameters.
 
 ## Bash Shell Script Standalone (Linux, Mac OS X)
 

@@ -30,7 +30,10 @@ ENV ALFRESCO_VERSION=enterprise \
     CA_CERT_DNAME="/C=GB/ST=UK/L=Maidenhead/O=Alfresco Software Ltd./OU=Unknown/CN=Custom Alfresco CA" \
     REPO_CERT_DNAME="/C=GB/ST=UK/L=Maidenhead/O=Alfresco Software Ltd./OU=Unknown/CN=Custom Alfresco Repository" \
     SOLR_CERT_DNAME="/C=GB/ST=UK/L=Maidenhead/O=Alfresco Software Ltd./OU=Unknown/CN=Custom Alfresco Repository Client" \
-    BROWSER_CERT_DNAME="/C=GB/ST=UK/L=Maidenhead/O=Alfresco Software Ltd./OU=Unknown/CN=Custom Browser Client"
+    BROWSER_CERT_DNAME="/C=GB/ST=UK/L=Maidenhead/O=Alfresco Software Ltd./OU=Unknown/CN=Custom Browser Client" \
+    CA_SERVER_NAME=localhost \
+    ALFRESCO_SERVER_NAME=localhost \
+    SOLR_SERVER_NAME=localhost
 
 # Exposing working folders:
 # - keystores folder, where generated keystores, truststores and password files are produced
@@ -52,4 +55,7 @@ CMD ["sh", "-c", "./run.sh \
 -repocertdname \"$REPO_CERT_DNAME\" \
 -solrcertdname \"$SOLR_CERT_DNAME\" \
 -browsercertdname \"$BROWSER_CERT_DNAME\" \
+-caservername \"$CA_SERVER_NAME\" \
+-alfrescoservername \"$ALFRESCO_SERVER_NAME\" \
+-solrservername \"$SOLR_SERVER_NAME\" \
 "]

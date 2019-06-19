@@ -52,6 +52,11 @@ SOLR_CLIENT_CERT_DNAME="/C=GB/ST=UK/L=Maidenhead/O=Alfresco Software Ltd./OU=Unk
 # Distinguished name of the Browser Certificate for SOLR
 BROWSER_CLIENT_CERT_DNAME="/C=GB/ST=UK/L=Maidenhead/O=Alfresco Software Ltd./OU=Unknown/CN=Custom Browser Client"
 
+# Alfresco and SOLR server names, to be used as Alternative Name in the certificates
+CA_SERVER_NAME=localhost
+ALFRESCO_SERVER_NAME=localhost
+SOLR_SERVER_NAME=localhost
+
 # RSA key length (1024, 2048, 4096)
 KEY_SIZE=1024
 
@@ -155,6 +160,12 @@ function generate {
   openssl genrsa -aes256 -passout pass:$KEYSTORE_PASS -out ca/private/ca.key.pem $KEY_SIZE
   chmod 400 ca/private/ca.key.pem
 
+  if [[ "$OSTYPE" == "darwin"* ]]; then
+    sed -i '' "s/DNS.1.*/DNS.1 = $CA_SERVER_NAME/" openssl.cnf;
+  else
+    sed -i "s/DNS.1.*/DNS.1 = $CA_SERVER_NAME/" openssl.cnf;
+  fi
+
   openssl req -config openssl.cnf \
         -key ca/private/ca.key.pem \
         -new -x509 -days 7300 -sha256 -extensions v3_ca \
@@ -164,6 +175,11 @@ function generate {
   chmod 444 ca/certs/ca.cert.pem
 
   # Generate Server Certificate for Alfresco (issued by just generated CA)
+  if [[ "$OSTYPE" == "darwin"* ]]; then
+    sed -i '' "s/DNS.1.*/DNS.1 = $ALFRESCO_SERVER_NAME/" openssl.cnf;
+  else
+    sed -i "s/DNS.1.*/DNS.1 = $ALFRESCO_SERVER_NAME/" openssl.cnf;
+  fi
   openssl req -newkey rsa:$KEY_SIZE -nodes -out $CERTIFICATES_DIR/repository.csr -keyout $CERTIFICATES_DIR/repository.key -subj "$REPO_CERT_DNAME"
 
   openssl ca -config openssl.cnf -extensions server_cert -passin pass:$KEYSTORE_PASS -batch -notext \
@@ -173,6 +189,11 @@ function generate {
   -in $CERTIFICATES_DIR/repository.cer -password pass:$KEYSTORE_PASS -certfile ca/certs/ca.cert.pem
 
   # Server Certificate for SOLR (issued by just generated CA)
+  if [[ "$OSTYPE" == "darwin"* ]]; then
+    sed -i '' "s/DNS.1.*/DNS.1 = $SOLR_SERVER_NAME/" openssl.cnf;
+  else
+    sed -i "s/DNS.1.*/DNS.1 = $SOLR_SERVER_NAME/" openssl.cnf;
+  fi
   openssl req -newkey rsa:$KEY_SIZE -nodes -out $CERTIFICATES_DIR/solr.csr -keyout $CERTIFICATES_DIR/solr.key -subj "$SOLR_CLIENT_CERT_DNAME"
 
   openssl ca -config openssl.cnf -extensions server_cert -passin pass:$KEYSTORE_PASS -batch -notext \
@@ -372,6 +393,21 @@ do
             BROWSER_CLIENT_CERT_DNAME="$2"
             shift
         ;;
+        # DNS name for CA Server
+        -caservername)
+            CA_SERVER_NAME="$2"
+            shift
+        ;;
+        # DNS name for Alfresco Server
+        -alfrescoservername)
+            ALFRESCO_SERVER_NAME="$2"
+            shift
+        ;;
+        # DNS name for SOLR Server
+        -solrservername)
+            SOLR_SERVER_NAME="$2"
+            shift
+        ;;
         *)
             echo "An invalid parameter was received: $1"
             echo "Allowed parameters:"
@@ -387,6 +423,9 @@ do
             echo "  -repocertdname"
             echo "  -solrcertdname"
             echo "  -browsercertdname"
+            echo "  -caservername"
+            echo "  -alfrescoservername"
+            echo "  -solrservername"
             exit 1
         ;;
     esac

@@ -96,50 +96,50 @@ function generate {
 
   # Remove previous working directories and certificates
   if [ -d ca ]; then
-      rm -rf ca/*
+      rm -rf ca
   fi
 
   if [ -d $CERTIFICATES_DIR ]; then
-      rm -rf $CERTIFICATES_DIR/*
+      rm -rf $CERTIFICATES_DIR
   fi
 
   # Create folders for truststores, keystores and certificates
   if [ ! -d "$KEYSTORES_DIR" ]; then
     mkdir $KEYSTORES_DIR
   else
-    rm -rf $KEYSTORES_DIR/*
+    rm -rf $KEYSTORES_DIR
   fi
 
   if [ ! -d "$ALFRESCO_KEYSTORES_DIR" ]; then
     mkdir $ALFRESCO_KEYSTORES_DIR
   else
-    rm -rf $ALFRESCO_KEYSTORES_DIR/*
+    rm -rf $ALFRESCO_KEYSTORES_DIR
   fi
 
   if [ ! -d "$SOLR_KEYSTORES_DIR" ]; then
     mkdir $SOLR_KEYSTORES_DIR
   else
-    rm -rf $SOLR_KEYSTORES_DIR/*
+    rm -rf $SOLR_KEYSTORES_DIR
   fi
 
   if [ "$ALFRESCO_VERSION" = "enterprise" ]; then
     if [ ! -d "$ZEPPELIN_KEYSTORES_DIR" ]; then
       mkdir $ZEPPELIN_KEYSTORES_DIR
     else
-      rm -rf $ZEPPELIN_KEYSTORES_DIR/*
+      rm -rf $ZEPPELIN_KEYSTORES_DIR
     fi
   fi
 
   if [ ! -d "$CLIENT_KEYSTORES_DIR" ]; then
     mkdir $CLIENT_KEYSTORES_DIR
   else
-    rm -rf $CLIENT_KEYSTORES_DIR/*
+    rm -rf $CLIENT_KEYSTORES_DIR
   fi
 
   if [ ! -d "$CERTIFICATES_DIR" ]; then
     mkdir $CERTIFICATES_DIR
   else
-    rm -rf $CERTIFICATES_DIR/*
+    rm -rf $CERTIFICATES_DIR
   fi
 
 

@@ -311,3 +311,80 @@ This problem is described at Bugzilla:
 [https://bugzilla.mozilla.org/show_bug.cgi?id=435013](https://bugzilla.mozilla.org/show_bug.cgi?id=435013)
 
 Apply any of the workarounds provided (as removing `cert8.db` or `cert9.db` file from your Firefox profile folder) in order to fix this problem.
+
+## Using Custom Certificates
+
+When using certificates from external CAs, not the one provided by this project, building the `keystores` and `truststores` for Repository and SOLR is required. `keytool` or any other tool can be used in order to build these stores. Details on the content of every related file is available in [Alfresco MTLS Configuration Deep Dive](https://hub.alfresco.com/t5/alfresco-content-services-blog/alfresco-mtls-configuration-deep-dive/ba-p/296422).
+
+Note that every intermediate CA public key must be included in every `truststore`.
+
+`keytool` can be used to get this certificate chain.
+
+```
+$ keytool -list -alias alfresco.ca -keystore ssl.repo.client.keystore -rfc
+Alias name: alfresco.ca
+Creation date: 20 Feb 2020
+Entry type: PrivateKeyEntry
+Certificate chain length: 2
+Certificate[1]:
+-----BEGIN CERTIFICATE-----
+MIIFNTCCBB2gAwIBAgIQDZAM1h0f9komm5D7ivokHTANBgkqhkiG9w0BAQsFADBe
+MQswCQYDVQQGEwJVUzEVMBMGA1UEChMMRGlnaUNlcnQgSW5jMRkwFwYDVQQLExB3
+d3cuZGlnaWNlcnQuY29tMR0wGwYDVQQDExRHZW9UcnVzdCBSU0EgQ0EgMjAxODAe
+Fw0xODAxMDIwMDAwMDBaFw0yMTAxMDExMjAwMDBaMIGaMQswCQYDVQQGEwJVUzEQ
+MA4GA1UECBMHSW5kaWFuYTEVMBMGA1UEBxMMSW5kaWFuYXBvbGlzMSwwKgYDVQQK
+EyNPbmVBbWVyaWNhIEZpbmFuY2lhbCBQYXJ0bmVycywgSW5jLjEZMBcGA1UECxMQ
+TmV0d29yayBTZXJ2aWNlczEZMBcGA1UEAwwQKi5vbmVhbWVyaWNhLmNvbTCCASIw
+DQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBALYdHOLovHc2j5xQfBngerSsIFJa
+VGOwsPQplUkQJ1P/V/gq9ihCtC/CqMFsQJRKJyoQ9Ii+CxsZLjeNVoPUl74AEoUX
+gO+Mv1BpEAdV0KvC8gF9jUk0Rv/u9Mebt08uoGPKW6bb+XkphboopwhqNt42Ypk6
+gwHW/HCyuCFXzWWT5ipcuK9vMpiNlZbBipicsX716AzYdOZ9uDSKpWbtxPriwsUe
+Kbgkm5b2y3dH42bxjRs7ErNcVWF8jPiFUeDRFhA2gV2vbVfPr9jZV9be34xHJXv8
+O3SDLjgdvay5128jqOhHOt8seNVW6+I3qpWjePPwWZs+FrgcMwOxBO+S+CkCAwEA
+AaOCAbAwggGsMB8GA1UdIwQYMBaAFJBY/7CcdahRVHex7fKjQxY4nmzFMB0GA1Ud
+DgQWBBRXtA41zjBtnwIQMyDegWj9frpzTjArBgNVHREEJDAighAqLm9uZWFtZXJp
+Y2EuY29tgg5vbmVhbWVyaWNhLmNvbTAOBgNVHQ8BAf8EBAMCBaAwHQYDVR0lBBYw
+FAYIKwYBBQUHAwEGCCsGAQUFBwMCMD4GA1UdHwQ3MDUwM6AxoC+GLWh0dHA6Ly9j
+ZHAuZ2VvdHJ1c3QuY29tL0dlb1RydXN0UlNBQ0EyMDE4LmNybDBMBgNVHSAERTBD
+MDcGCWCGSAGG/WwBATAqMCgGCCsGAQUFBwIBFhxodHRwczovL3d3dy5kaWdpY2Vy
+dC5jb20vQ1BTMAgGBmeBDAECAjB1BggrBgEFBQcBAQRpMGcwJgYIKwYBBQUHMAGG
+Gmh0dHA6Ly9zdGF0dXMuZ2VvdHJ1c3QuY29tMD0GCCsGAQUFBzAChjFodHRwOi8v
+Y2FjZXJ0cy5nZW90cnVzdC5jb20vR2VvVHJ1c3RSU0FDQTIwMTguY3J0MAkGA1Ud
+EwQCMAAwDQYJKoZIhvcNAQELBQADggEBACvC+8nlAtCo7AMSP0ajPyobbNGOg/Ix
+gVIKzQV8mnAntxjWn+SqnHGeWMqhvbsAeRDWkDc/XDq4Qq+QJMDM2ZyePENGDnvV
+IjMPVHS+Nu1vc1JC9zn8vi9XKfB7OOcVOIJAp7ZZP9zAZLk79I0F6q6BeKj/d6my
+jEZO//4QLK5FA+Bz8Ah0XP5Nt90x+pPi76yRbUuxgkJd5va9JfX2GM5cpw/BphjN
+JeUhgFD8Gw8wxELwqNtc5QUlE0WlJSBrbRL9y+xuHcSYRlCsd3nEZ3h5PCtgjplz
+iRxoB7R8KED+wH+MlWDSMbe+BtQ3rp9dPK2FYSZhQ3pIH4pR0+S+13Q=
+-----END CERTIFICATE-----
+Certificate[2]:
+-----BEGIN CERTIFICATE-----
+MIIEizCCA3OgAwIBAgIQBUb+GCP34ZQdo5/OFMRhczANBgkqhkiG9w0BAQsFADBh
+MQswCQYDVQQGEwJVUzEVMBMGA1UEChMMRGlnaUNlcnQgSW5jMRkwFwYDVQQLExB3
+d3cuZGlnaWNlcnQuY29tMSAwHgYDVQQDExdEaWdpQ2VydCBHbG9iYWwgUm9vdCBD
+QTAeFw0xNzExMDYxMjIzNDVaFw0yNzExMDYxMjIzNDVaMF4xCzAJBgNVBAYTAlVT
+MRUwEwYDVQQKEwxEaWdpQ2VydCBJbmMxGTAXBgNVBAsTEHd3dy5kaWdpY2VydC5j
+b20xHTAbBgNVBAMTFEdlb1RydXN0IFJTQSBDQSAyMDE4MIIBIjANBgkqhkiG9w0B
+AQEFAAOCAQ8AMIIBCgKCAQEAv4rRY03hGOqHXegWPI9/tr6HFzekDPgxP59FVEAh
+150Hm8oDI0q9m+2FAmM/n4W57Cjv8oYi2/hNVEHFtEJ/zzMXAQ6CkFLTxzSkwaEB
+2jKgQK0fWeQz/KDDlqxobNPomXOMJhB3y7c/OTLo0lko7geG4gk7hfiqafapa59Y
+rXLIW4dmrgjgdPstU0Nigz2PhUwRl9we/FAwuIMIMl5cXMThdSBK66XWdS3cLX18
+4ND+fHWhTkAChJrZDVouoKzzNYoq6tZaWmyOLKv23v14RyZ5eqoi6qnmcRID0/i6
+U9J5nL1krPYbY7tNjzgC+PBXXcWqJVoMXcUw/iBTGWzpwwIDAQABo4IBQDCCATww
+HQYDVR0OBBYEFJBY/7CcdahRVHex7fKjQxY4nmzFMB8GA1UdIwQYMBaAFAPeUDVW
+0Uy7ZvCj4hsbw5eyPdFVMA4GA1UdDwEB/wQEAwIBhjAdBgNVHSUEFjAUBggrBgEF
+BQcDAQYIKwYBBQUHAwIwEgYDVR0TAQH/BAgwBgEB/wIBADA0BggrBgEFBQcBAQQo
+MCYwJAYIKwYBBQUHMAGGGGh0dHA6Ly9vY3NwLmRpZ2ljZXJ0LmNvbTBCBgNVHR8E
+OzA5MDegNaAzhjFodHRwOi8vY3JsMy5kaWdpY2VydC5jb20vRGlnaUNlcnRHbG9i
+YWxSb290Q0EuY3JsMD0GA1UdIAQ2MDQwMgYEVR0gADAqMCgGCCsGAQUFBwIBFhxo
+dHRwczovL3d3dy5kaWdpY2VydC5jb20vQ1BTMA0GCSqGSIb3DQEBCwUAA4IBAQAw
+8YdVPYQI/C5earp80s3VLOO+AtpdiXft9OlWwJLwKlUtRfccKj8QW/Pp4b7h6QAl
+ufejwQMb455OjpIbCZVS+awY/R8pAYsXCnM09GcSVe4ivMswyoCZP/vPEn/LPRhH
+hdgUPk8MlD979RGoUWz7qGAwqJChi28uRds3thx+vRZZIbEyZ62No0tJPzsSGSz8
+nQ//jP8BIwrzBAUH5WcBAbmvgWfrKcuv+PyGPqRcc4T55TlzrBnzAzZ3oClo9fTv
+O9PuiHMKrC6V6mgi0s2sa/gbXlPCD9Z24XUMxJElwIVTDuKB0Q4YMMlnpN/QChJ4
+B0AFsQ+DU0NCO+f78Xf7
+-----END CERTIFICATE-----
+```
+
+In the sample above, `Certificate[2]` content could be saved as `alfresco-ca-root.cer` to be imported in the repository truststore.

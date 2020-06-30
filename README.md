@@ -107,6 +107,7 @@ Both command line scripts and Docker Image resources can be parametrised by usin
 | -caservername         | CA_SERVER_NAME        | DNS Name for CA Server       | Any string, `localhost` by default        |
 | -alfrescoservername   | ALFRESCO_SERVER_NAME  | DNS Name for Alfresco Server | Any string, `localhost` by default        |
 | -solrservername       | SOLR_SERVER_NAME      | DNS Name for SOLR Server     | Any string, `localhost` by default        |
+| -alfrescoformat       | ALFRESCO_FORMAT       | Default format for certificates, truststores and keystores | `classic` or `current` (only supported from ACS 7.0) |
 
 When using Alfresco on an internal network, each server should have a different name. This names can be configured on the parameters named as `*servername`. In order to avoid browser complains about certificates, it's recommended to include the name of the server as `Alternative Name` in the certificate. This should be at least required for SOLR Web Console, as this application is only available in `https` when using this configuration. If you are working under a Web Proxy, use the name of this proxy for the `*servername` parameters.
 
@@ -121,7 +122,7 @@ For instance, the following command will produce `keystores` folder in a host fo
 ```bash
 $ cd ssl-tool
 
-$ ./run.sh -keysize 2048 -alfrescoversion enterprise
+$ ./run.sh -keysize 2048 -alfrescoversion enterprise -alfrescoformat classic
 
 $ tree keystores/
 keystores/
@@ -155,6 +156,30 @@ $ ./run.sh -cacertdname "/C=GB/ST=UK/L=Maidenhead/O=Alfresco/OU=Unknown/CN=Linux
 
 Note that when `keystores` folder is not empty, the program exists without producing any keystore or truststore.
 
+When using `current` Alfresco format (default option), instead of `classic`, following output is generated.
+
+```bash
+$ cd ssl-tool
+
+$ ./run.sh -keysize 2048 -alfrescoversion enterprise
+
+$ tree keystores/
+keystores/
+├── alfresco
+│   ├── keystore
+│   ├── ssl.keystore
+│   └── ssl.truststore
+├── client
+│   └── browser.p12
+├── solr
+│   ├── ssl-repo-client.keystore
+│   └── ssl-repo-client.truststore
+└── zeppelin
+    ├── ssl-repo-client.keystore
+    └── ssl-repo-client.truststore
+```
+
+For the `current` format all the passwords are passed to the applications using Java Environment Variables, so the password files are not required any more.
 
 ## Batch Script Standalone (Windows)
 
@@ -167,7 +192,7 @@ For instance, the following command will produce `keystores` folder in a host fo
 ```bash
 C:\> cd ssl-tool-win
 
-C:\> run.cmd -keysize 2048 -alfrescoversion community
+C:\> run.cmd -keysize 2048 -alfrescoversion community -alfrescoformat classic
 
 C:\> tree /F keystores
 ├───alfresco
@@ -199,6 +224,28 @@ C:\> run.cmd -cacertdname "/C=GB/ST=UK/L=Maidenhead/O=Alfresco/OU=Unknown/CN=Win
 
 Note that when `keystores` folder is not empty, the program exists without producing any keystore or truststore.
 
+When using `current` Alfresco format (default option), instead of `classic`, following output is generated.
+
+```bash
+C:\> cd ssl-tool-win
+
+C:\> run.cmd -keysize 2048 -alfrescoversion community
+
+C:\> tree /F keystores
+├───alfresco
+│       keystore
+│       ssl.keystore
+│       ssl.truststore
+│
+├───client
+│       browser.p12
+│
+└───solr
+        ssl.repo.client.keystore
+        ssl.repo.client.truststore
+```
+
+For the `current` format all the passwords are passed to the applications using Java Environment Variables, so the password files are not required any more.
 
 ## Installing Browser certificate
 
@@ -251,21 +298,16 @@ $ tree keystores
 keystores
 ├── alfresco
 │   ├── keystore
-│   ├── keystore-passwords.properties
-│   ├── ssl-keystore-passwords.properties
-│   ├── ssl-truststore-passwords.properties
 │   ├── ssl.keystore
 │   └── ssl.truststore
 ├── client
 │   └── browser.p12
 ├── solr
-│   ├── ssl-keystore-passwords.properties
-│   ├── ssl-truststore-passwords.properties
-│   ├── ssl.repo.client.keystore
-│   └── ssl.repo.client.truststore
+│   ├── ssl-repo-client.keystore
+│   └── ssl-repo-client.truststore
 └── zeppelin
-    ├── ssl.repo.client.keystore
-    └── ssl.repo.client.truststore
+    ├── ssl-repo-client.keystore
+    └── ssl-repo-client.truststore
 ```    
 
 **Parameters**

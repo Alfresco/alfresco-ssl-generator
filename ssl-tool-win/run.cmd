@@ -8,7 +8,7 @@ REM * Server Certificate for SOLR (alias ssl.repo.client)
 REM
 REM "openssl.cnf" file is provided for CA Configuration.
 REM
-REM Once this script has been executed successfully, following resources are generated in ${KEYSTORES_DIR} folder:
+REM Once this script has been executed successfully, following resources are generated in %KEYSTORES_DIR% folder:
 REM
 REM .
 REM ├── alfresco
@@ -29,6 +29,22 @@ REM └── zeppelin
 REM     ├── ssl.repo.client.keystore
 REM     └── ssl.repo.client.truststore
 REM
+REM When using "current" Alfresco format (available from ACS 7.0), following resources are generated in %KEYSTORES_DIR%
+REM
+REM .
+REM ├── alfresco
+REM │   ├── keystore
+REM │   ├── ssl.keystore
+REM │   └── ssl.truststore
+REM ├── client
+REM │   └── browser.p12
+REM ├── solr
+REM │   ├── ssl-repo-client.keystore
+REM │   └── ssl-repo-client.truststore
+REM └── zeppelin
+REM     ├── ssl-repo-client.keystore
+REM     └── ssl-repo-client.truststore
+REM
 REM "alfresco" files must be copied to "alfresco/keystore" folder
 REM "solr" files must be copied to "solr6/keystore"
 REM "zeppelin" files must be copied to "zeppelin/keystore"
@@ -40,6 +56,9 @@ REM ----------
 
 REM Version of Alfresco: enterprise, community
 SET ALFRESCO_VERSION=enterprise
+
+REM Using "current" format by default (only available from ACS 7.0+)
+SET ALFRESCO_FORMAT=current
 
 REM Distinguished name of the CA
 SET CA_DNAME=/C=GB/ST=UK/L=Maidenhead/O=Alfresco Software Ltd./OU=Unknown/CN=Custom Alfresco CA
@@ -62,8 +81,12 @@ REM Keystore format (PKCS12, JKS, JCEKS)
 SET KEYSTORE_TYPE=JCEKS
 REM Truststore format (JKS, JCEKS)
 SET TRUSTSTORE_TYPE=JCEKS
-REM Encryption keystore format (JCEKS)
-SET ENC_STORE_TYPE=JCEKS
+REM Encryption keystore format: PKCS12 (default for "current"), JCEKS (default for "classic")
+IF "%ALFRESCO_FORMAT%" == "current" (
+  SET ENC_STORE_TYPE=PKCS12
+) ELSE (
+  SET ENC_STORE_TYPE=JCEKS
+)
 
 REM Default password for every keystore and private key
 SET KEYSTORE_PASS=keystore
@@ -73,6 +96,12 @@ SET TRUSTSTORE_PASS=truststore
 REM Encryption secret key passwords
 SET ENC_STORE_PASS=password
 SET ENC_METADATA_PASS=password
+REM Encryption keystore format: PKCS12 (default for "current"), JCEKS (default for "classic")
+IF "%ALFRESCO_FORMAT%" == "current" (
+  SET ENC_KEY_ALG="-keyalg AES -keysize 256"
+) ELSE (
+  SET ENC_KEY_ALG="-keyalg DESede"
+)
 
 REM Parse params from command line
 :loop
@@ -164,6 +193,12 @@ IF NOT "%1"=="" (
   IF "%1"=="-solrservername" (
     SHIFT
     SET SOLR_SERVER_NAME=%~2
+    SHIFT
+    GOTO loop
+  )
+  IF "%1"=="-alfrescoformat" (
+    SHIFT
+    SET ALFRESCO_FORMAT=%~2
     SHIFT
     GOTO loop
   )
@@ -376,7 +411,7 @@ ECHO ssl.alfresco.ca.password=%KEYSTORE_PASS%>> %ALFRESCO_KEYSTORES_DIR%\ssl-key
 
 REM Generate Encryption Secret Key
 keytool -genseckey -alias metadata -keypass %ENC_METADATA_PASS% -storepass %ENC_STORE_PASS% -keystore %ALFRESCO_KEYSTORES_DIR%\keystore ^
--storetype %ENC_STORE_TYPE% -keyalg DESede
+-storetype %ENC_STORE_TYPE% %ENC_KEY_ALG%
 
 REM Create Alfresco Encryption password file
 ECHO aliases=metadata>> %ALFRESCO_KEYSTORES_DIR%\keystore-passwords.properties
@@ -398,3 +433,16 @@ keytool -importkeystore ^
 -srcalias 1 -destalias browser ^
 -srckeypass %KEYSTORE_PASS% -destkeypass %KEYSTORE_PASS% ^
 -noprompt
+
+REM Renaming files for current Alfresco Format
+IF "%ALFRESCO_FORMAT%" == "current" (
+    del %SOLR_KEYSTORES_DIR%/ssl-truststore-passwords.properties
+    del %SOLR_KEYSTORES_DIR%/ssl-keystore-passwords.properties
+    del %ALFRESCO_KEYSTORES_DIR%/ssl-truststore-passwords.properties
+    del %ALFRESCO_KEYSTORES_DIR%/ssl-keystore-passwords.properties
+    del %ALFRESCO_KEYSTORES_DIR%/keystore-passwords.properties
+    move %SOLR_KEYSTORES_DIR%/ssl.repo.client.truststore %SOLR_KEYSTORES_DIR%/ssl-repo-client.truststore
+    move %SOLR_KEYSTORES_DIR%/ssl.repo.client.keystore %SOLR_KEYSTORES_DIR%/ssl-repo-client.keystore
+    move %ZEPPELIN_KEYSTORES_DIR%/ssl.repo.client.keystore %ZEPPELIN_KEYSTORES_DIR%/ssl-repo-client.keystore
+    move %ZEPPELIN_KEYSTORES_DIR%/ssl.repo.client.truststore %ZEPPELIN_KEYSTORES_DIR%/ssl-repo-client.truststore
+)

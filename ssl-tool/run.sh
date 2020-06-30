@@ -12,7 +12,7 @@ set -o nounset
 #
 # "openssl.cnf" file is provided for CA Configuration.
 #
-# Once this script has been executed successfully, following resources are generated in ${KEYSTORES_DIR} folder:
+# Once this script has been executed successfully, following resources are generated in ${KEYSTORES_DIR} folder for "classic" Alfresco format:
 #
 # .
 # ├── alfresco
@@ -33,6 +33,21 @@ set -o nounset
 #     ├── ssl.repo.client.keystore
 #     └── ssl.repo.client.truststore
 #
+# When using "current" Alfresco format (available from ACS 7.0), following resources are generated in ${KEYSTORES_DIR}
+# .
+# ├── alfresco
+# │   ├── keystore
+# │   ├── ssl.keystore
+# │   └── ssl.truststore
+# ├── client
+# │   └── browser.p12
+# ├── solr
+# │   ├── ssl-repo-client.keystore
+# │   └── ssl-repo-client.truststore
+# └── zeppelin
+#     ├── ssl-repo-client.keystore
+#     └── ssl-repo-client.truststore
+#
 # "alfresco" files must be copied to "alfresco/keystore" folder
 # "solr" files must be copied to "solr6/keystore"
 # "zeppelin" files must be copied to "zeppelin/keystore"
@@ -42,6 +57,9 @@ set -o nounset
 
 # Version of Alfresco: enterprise, community
 ALFRESCO_VERSION=enterprise
+
+# Using "current" format by default (only available from ACS 7.0+)
+ALFRESCO_FORMAT=current
 
 # Distinguished name of the CA
 CA_DNAME="/C=GB/ST=UK/L=Maidenhead/O=Alfresco Software Ltd./OU=Unknown/CN=Custom Alfresco CA"
@@ -64,8 +82,12 @@ KEY_SIZE=1024
 KEYSTORE_TYPE=JCEKS
 # Truststore format (JKS, JCEKS)
 TRUSTSTORE_TYPE=JCEKS
-# Encryption keystore format (JCEKS)
-ENC_STORE_TYPE=JCEKS
+# Encryption keystore format: PKCS12 (default for "current"), JCEKS (default for "classic")
+if [ "$ALFRESCO_FORMAT" = "current" ]; then
+  ENC_STORE_TYPE=PKCS12
+else
+  ENC_STORE_TYPE=JCEKS
+fi
 
 # Default password for every keystore and private key
 KEYSTORE_PASS=keystore
@@ -75,6 +97,12 @@ TRUSTSTORE_PASS=truststore
 # Encryption secret key passwords
 ENC_STORE_PASS=password
 ENC_METADATA_PASS=password
+# Key algorithm: AES (default for "current"), DESede (default for "classic")
+if [ "$ALFRESCO_FORMAT" = "current" ]; then
+  ENC_KEY_ALG="-keyalg AES -keysize 256"
+else
+  ENC_KEY_ALG="-keyalg DESede"
+fi
 
 # Folder where keystores, truststores and cerfiticates are generated
 KEYSTORES_DIR=keystores
@@ -303,7 +331,7 @@ function generate {
 
   # Generate Encryption Secret Key
   keytool -genseckey -alias metadata -keypass $ENC_METADATA_PASS -storepass $ENC_STORE_PASS -keystore ${ALFRESCO_KEYSTORES_DIR}/keystore \
-  -storetype $ENC_STORE_TYPE -keyalg DESede
+  -storetype $ENC_STORE_TYPE $ENC_KEY_ALG
 
   # Create Alfresco Encryption password file
   echo "aliases=metadata" >> ${ALFRESCO_KEYSTORES_DIR}/keystore-passwords.properties
@@ -325,6 +353,21 @@ function generate {
   -srcalias 1 -destalias browser \
   -srckeypass $KEYSTORE_PASS -destkeypass $KEYSTORE_PASS \
   -noprompt
+
+  #
+  # Renaming files for current Alfresco Format
+  #
+  if [ "$ALFRESCO_FORMAT" = "current" ]; then
+    rm ${SOLR_KEYSTORES_DIR}/ssl-truststore-passwords.properties
+    rm ${SOLR_KEYSTORES_DIR}/ssl-keystore-passwords.properties
+    rm ${ALFRESCO_KEYSTORES_DIR}/ssl-truststore-passwords.properties
+    rm ${ALFRESCO_KEYSTORES_DIR}/ssl-keystore-passwords.properties
+    rm ${ALFRESCO_KEYSTORES_DIR}/keystore-passwords.properties
+    mv ${SOLR_KEYSTORES_DIR}/ssl.repo.client.truststore ${SOLR_KEYSTORES_DIR}/ssl-repo-client.truststore
+    mv ${SOLR_KEYSTORES_DIR}/ssl.repo.client.keystore ${SOLR_KEYSTORES_DIR}/ssl-repo-client.keystore
+    mv ${ZEPPELIN_KEYSTORES_DIR}/ssl.repo.client.keystore ${ZEPPELIN_KEYSTORES_DIR}/ssl-repo-client.keystore
+    mv ${ZEPPELIN_KEYSTORES_DIR}/ssl.repo.client.truststore ${ZEPPELIN_KEYSTORES_DIR}/ssl-repo-client.truststore
+  fi
 
 }
 
@@ -408,6 +451,11 @@ do
             SOLR_SERVER_NAME="$2"
             shift
         ;;
+        # Alfresco Format: "classic" / "current" is supported only from 7.0
+        -alfrescoformat)
+            ALFRESCO_FORMAT="$2"
+            shift
+        ;;
         *)
             echo "An invalid parameter was received: $1"
             echo "Allowed parameters:"
@@ -426,6 +474,7 @@ do
             echo "  -caservername"
             echo "  -alfrescoservername"
             echo "  -solrservername"
+            echo "  -alfrescoformat"
             exit 1
         ;;
     esac

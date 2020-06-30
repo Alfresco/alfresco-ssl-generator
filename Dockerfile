@@ -33,7 +33,8 @@ ENV ALFRESCO_VERSION=enterprise \
     BROWSER_CERT_DNAME="/C=GB/ST=UK/L=Maidenhead/O=Alfresco Software Ltd./OU=Unknown/CN=Custom Browser Client" \
     CA_SERVER_NAME=localhost \
     ALFRESCO_SERVER_NAME=localhost \
-    SOLR_SERVER_NAME=localhost
+    SOLR_SERVER_NAME=localhost \
+    ALFRESCO_FORMAT=current
 
 # Exposing working folders:
 # - keystores folder, where generated keystores, truststores and password files are produced
@@ -58,4 +59,5 @@ CMD ["sh", "-c", "./run.sh \
 -caservername \"$CA_SERVER_NAME\" \
 -alfrescoservername \"$ALFRESCO_SERVER_NAME\" \
 -solrservername \"$SOLR_SERVER_NAME\" \
+-alfrescoformat \"$ALFRESCO_FORMAT\" \
 "]

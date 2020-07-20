@@ -81,12 +81,6 @@ REM Keystore format (PKCS12, JKS, JCEKS)
 SET KEYSTORE_TYPE=JCEKS
 REM Truststore format (JKS, JCEKS)
 SET TRUSTSTORE_TYPE=JCEKS
-REM Encryption keystore format: PKCS12 (default for "current"), JCEKS (default for "classic")
-IF "%ALFRESCO_FORMAT%" == "current" (
-  SET ENC_STORE_TYPE=PKCS12
-) ELSE (
-  SET ENC_STORE_TYPE=JCEKS
-)
 
 REM Default password for every keystore and private key
 SET KEYSTORE_PASS=keystore
@@ -96,12 +90,6 @@ SET TRUSTSTORE_PASS=truststore
 REM Encryption secret key passwords
 SET ENC_STORE_PASS=password
 SET ENC_METADATA_PASS=password
-REM Encryption keystore format: PKCS12 (default for "current"), JCEKS (default for "classic")
-IF "%ALFRESCO_FORMAT%" == "current" (
-  SET ENC_KEY_ALG="-keyalg AES -keysize 256"
-) ELSE (
-  SET ENC_KEY_ALG="-keyalg DESede"
-)
 
 REM Parse params from command line
 :loop
@@ -213,6 +201,20 @@ SET SOLR_KEYSTORES_DIR=keystores\solr
 SET ZEPPELIN_KEYSTORES_DIR=keystores\zeppelin
 SET CLIENT_KEYSTORES_DIR=keystores\client
 SET CERTIFICATES_DIR=certificates
+
+REM Encryption keystore format: PKCS12 (default for "current"), JCEKS (default for "classic")
+IF "%ALFRESCO_FORMAT%" == "current" (
+  SET ENC_STORE_TYPE=PKCS12
+) ELSE (
+  SET ENC_STORE_TYPE=JCEKS
+)
+
+REM Encryption keystore format: PKCS12 (default for "current"), JCEKS (default for "classic")
+IF "%ALFRESCO_FORMAT%" == "current" (
+  SET ENC_KEY_ALG="-keyalg AES -keysize 256"
+) ELSE (
+  SET ENC_KEY_ALG="-keyalg DESede"
+)
 
 REM If target folder for Keystores is not empty, skip generation
 IF EXIST "%KEYSTORES_DIR%" (

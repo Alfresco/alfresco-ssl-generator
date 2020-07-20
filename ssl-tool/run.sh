@@ -82,12 +82,6 @@ KEY_SIZE=1024
 KEYSTORE_TYPE=JCEKS
 # Truststore format (JKS, JCEKS)
 TRUSTSTORE_TYPE=JCEKS
-# Encryption keystore format: PKCS12 (default for "current"), JCEKS (default for "classic")
-if [ "$ALFRESCO_FORMAT" = "current" ]; then
-  ENC_STORE_TYPE=PKCS12
-else
-  ENC_STORE_TYPE=JCEKS
-fi
 
 # Default password for every keystore and private key
 KEYSTORE_PASS=keystore
@@ -97,12 +91,6 @@ TRUSTSTORE_PASS=truststore
 # Encryption secret key passwords
 ENC_STORE_PASS=password
 ENC_METADATA_PASS=password
-# Key algorithm: AES (default for "current"), DESede (default for "classic")
-if [ "$ALFRESCO_FORMAT" = "current" ]; then
-  ENC_KEY_ALG="-keyalg AES -keysize 256"
-else
-  ENC_KEY_ALG="-keyalg DESede"
-fi
 
 # Folder where keystores, truststores and cerfiticates are generated
 KEYSTORES_DIR=keystores
@@ -115,6 +103,20 @@ CERTIFICATES_DIR=certificates
 # SCRIPT
 # Generates every keystore, trustore and certificate required for Alfresco SSL configuration
 function generate {
+
+  # Encryption keystore format: PKCS12 (default for "current"), JCEKS (default for "classic")
+  if [ "$ALFRESCO_FORMAT" == "current" ]; then
+    ENC_STORE_TYPE=PKCS12
+  else
+    ENC_STORE_TYPE=JCEKS
+  fi
+
+  # Key algorithm: AES (default for "current"), DESede (default for "classic")
+  if [ "$ALFRESCO_FORMAT" == "current" ]; then
+    ENC_KEY_ALG="-keyalg AES -keysize 256"
+  else
+    ENC_KEY_ALG="-keyalg DESede"
+  fi
 
   # If target folder for Keystores is not empty, skip generation
   if [ "$(ls $KEYSTORES_DIR)" ]; then

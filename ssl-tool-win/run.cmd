@@ -211,9 +211,9 @@ IF "%ALFRESCO_FORMAT%" == "current" (
 
 REM Encryption keystore format: PKCS12 (default for "current"), JCEKS (default for "classic")
 IF "%ALFRESCO_FORMAT%" == "current" (
-  SET ENC_KEY_ALG="-keyalg AES -keysize 256"
+  SET ENC_KEY_ALG=-keyalg AES -keysize 256
 ) ELSE (
-  SET ENC_KEY_ALG="-keyalg DESede"
+  SET ENC_KEY_ALG=-keyalg DESede
 )
 
 REM If target folder for Keystores is not empty, skip generation
@@ -438,13 +438,13 @@ keytool -importkeystore ^
 
 REM Renaming files for current Alfresco Format
 IF "%ALFRESCO_FORMAT%" == "current" (
-    del %SOLR_KEYSTORES_DIR%/ssl-truststore-passwords.properties
-    del %SOLR_KEYSTORES_DIR%/ssl-keystore-passwords.properties
-    del %ALFRESCO_KEYSTORES_DIR%/ssl-truststore-passwords.properties
-    del %ALFRESCO_KEYSTORES_DIR%/ssl-keystore-passwords.properties
-    del %ALFRESCO_KEYSTORES_DIR%/keystore-passwords.properties
-    move %SOLR_KEYSTORES_DIR%/ssl.repo.client.truststore %SOLR_KEYSTORES_DIR%/ssl-repo-client.truststore
-    move %SOLR_KEYSTORES_DIR%/ssl.repo.client.keystore %SOLR_KEYSTORES_DIR%/ssl-repo-client.keystore
-    move %ZEPPELIN_KEYSTORES_DIR%/ssl.repo.client.keystore %ZEPPELIN_KEYSTORES_DIR%/ssl-repo-client.keystore
-    move %ZEPPELIN_KEYSTORES_DIR%/ssl.repo.client.truststore %ZEPPELIN_KEYSTORES_DIR%/ssl-repo-client.truststore
+    del %SOLR_KEYSTORES_DIR%\ssl-truststore-passwords.properties
+    del %SOLR_KEYSTORES_DIR%\ssl-keystore-passwords.properties
+    del %ALFRESCO_KEYSTORES_DIR%\ssl-truststore-passwords.properties
+    del %ALFRESCO_KEYSTORES_DIR%\ssl-keystore-passwords.properties
+    del %ALFRESCO_KEYSTORES_DIR%\keystore-passwords.properties
+    move %SOLR_KEYSTORES_DIR%\ssl.repo.client.truststore %SOLR_KEYSTORES_DIR%\ssl-repo-client.truststore
+    move %SOLR_KEYSTORES_DIR%\ssl.repo.client.keystore %SOLR_KEYSTORES_DIR%\ssl-repo-client.keystore
+    move %ZEPPELIN_KEYSTORES_DIR%\ssl.repo.client.keystore %ZEPPELIN_KEYSTORES_DIR%\ssl-repo-client.keystore
+    move %ZEPPELIN_KEYSTORES_DIR%\ssl.repo.client.truststore %ZEPPELIN_KEYSTORES_DIR%\ssl-repo-client.truststore
 )

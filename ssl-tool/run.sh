@@ -119,7 +119,7 @@ function generate {
   fi
 
   # If target folder for Keystores is not empty, skip generation
-  if [ "$(ls $KEYSTORES_DIR)" ]; then
+  if [ "$(ls -A $KEYSTORES_DIR)" ]; then
     echo "Keystores folder is not empty, skipping generation process..."
     exit 1
   fi

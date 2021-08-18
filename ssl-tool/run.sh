@@ -247,7 +247,7 @@ function generate {
   #
 
   # Include CA and Alfresco certificates in SOLR Truststore
-  keytool -import -trustcacerts -noprompt -alias ssl.alfresco.ca -file ca/certs/ca.cert.pem \
+  keytool -import -trustcacerts -noprompt -alias alfresco.ca -file ca/certs/ca.cert.pem \
   -keystore ${SOLR_KEYSTORES_DIR}/ssl.repo.client.truststore -storetype $TRUSTSTORE_TYPE -storepass $TRUSTSTORE_PASS
 
   keytool -importcert -noprompt -alias ssl.repo -file $CERTIFICATES_DIR/repository.cer \
@@ -273,7 +273,7 @@ function generate {
   -srckeypass $KEYSTORE_PASS -destkeypass $KEYSTORE_PASS \
   -noprompt
 
-  keytool -importcert -noprompt -alias alfresco.ca -file ca/certs/ca.cert.pem \
+  keytool -importcert -noprompt -alias ssl.alfresco.ca -file ca/certs/ca.cert.pem \
   -keystore ${SOLR_KEYSTORES_DIR}/ssl.repo.client.keystore -storetype $KEYSTORE_TYPE -storepass $KEYSTORE_PASS
 
   # Create SOLR Keystore password file

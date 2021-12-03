@@ -75,7 +75,7 @@ SET ALFRESCO_SERVER_NAME=localhost
 SET SOLR_SERVER_NAME=localhost
 
 REM RSA key length (1024, 2048, 4096)
-SET KEY_SIZE=1024
+SET KEY_SIZE=2048
 
 REM Keystore format (PKCS12, JKS, JCEKS)
 SET KEYSTORE_TYPE=JCEKS
@@ -209,7 +209,7 @@ IF "%ALFRESCO_FORMAT%" == "current" (
   SET ENC_STORE_TYPE=JCEKS
 )
 
-REM Encryption keystore format: PKCS12 (default for "current"), JCEKS (default for "classic")
+REM Key algorithm: AES (default for "current"), DESede (default for "classic")
 IF "%ALFRESCO_FORMAT%" == "current" (
   SET ENC_KEY_ALG=-keyalg AES -keysize 256
 ) ELSE (

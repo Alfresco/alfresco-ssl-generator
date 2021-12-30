@@ -18,6 +18,7 @@ ARG ALF_DATA_DIR=${TOMCAT_DIR}/alf_data
 VOLUME ["${ALF_DATA_DIR}/keystore"]
 
 # Default value in "repository.properties" is "dir.keystore=classpath:alfresco/keystore"
+USER root
 RUN echo -e "\n\
 dir.keystore=${ALF_DATA_DIR}/keystore\n\
 alfresco.encryption.ssl.keystore.type=${TRUSTSTORE_TYPE}\n\

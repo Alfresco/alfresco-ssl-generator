@@ -126,52 +126,47 @@ function generate {
 
   # Remove previous working directories and certificates
   if [ -d ca ]; then
-      rm -rf ca
-  fi
-
-  if [ -d $CERTIFICATES_DIR ]; then
-      rm -rf $CERTIFICATES_DIR
+      rm -rf ca/*
   fi
 
   # Create folders for truststores, keystores and certificates
   if [ ! -d "$KEYSTORES_DIR" ]; then
-    mkdir $KEYSTORES_DIR
+    mkdir -p $KEYSTORES_DIR
   else
-    rm -rf $KEYSTORES_DIR
+    rm -rf $KEYSTORES_DIR/*
   fi
 
   if [ ! -d "$ALFRESCO_KEYSTORES_DIR" ]; then
-    mkdir $ALFRESCO_KEYSTORES_DIR
+    mkdir -p $ALFRESCO_KEYSTORES_DIR
   else
-    rm -rf $ALFRESCO_KEYSTORES_DIR
+    rm -rf $ALFRESCO_KEYSTORES_DIR/*
   fi
 
   if [ ! -d "$SOLR_KEYSTORES_DIR" ]; then
-    mkdir $SOLR_KEYSTORES_DIR
+    mkdir -p $SOLR_KEYSTORES_DIR
   else
-    rm -rf $SOLR_KEYSTORES_DIR
+    rm -rf $SOLR_KEYSTORES_DIR/*
   fi
 
   if [ "$ALFRESCO_VERSION" = "enterprise" ]; then
     if [ ! -d "$ZEPPELIN_KEYSTORES_DIR" ]; then
-      mkdir $ZEPPELIN_KEYSTORES_DIR
+      mkdir -p $ZEPPELIN_KEYSTORES_DIR
     else
-      rm -rf $ZEPPELIN_KEYSTORES_DIR
+      rm -rf $ZEPPELIN_KEYSTORES_DIR/*
     fi
   fi
 
   if [ ! -d "$CLIENT_KEYSTORES_DIR" ]; then
-    mkdir $CLIENT_KEYSTORES_DIR
+    mkdir -p $CLIENT_KEYSTORES_DIR
   else
-    rm -rf $CLIENT_KEYSTORES_DIR
+    rm -rf $CLIENT_KEYSTORES_DIR/*
   fi
 
   if [ ! -d "$CERTIFICATES_DIR" ]; then
-    mkdir $CERTIFICATES_DIR
+    mkdir -p $CERTIFICATES_DIR
   else
-    rm -rf $CERTIFICATES_DIR
+    rm -rf $CERTIFICATES_DIR/*
   fi
-
 
   #
   # CA
@@ -212,7 +207,7 @@ function generate {
   fi
   openssl req -newkey rsa:$KEY_SIZE -nodes -out $CERTIFICATES_DIR/repository.csr -keyout $CERTIFICATES_DIR/repository.key -subj "$REPO_CERT_DNAME"
 
-  openssl ca -config openssl.cnf -extensions server_cert -passin pass:$KEYSTORE_PASS -batch -notext \
+  openssl ca -config openssl.cnf -extensions clientServer_cert -passin pass:$KEYSTORE_PASS -batch -notext \
   -in $CERTIFICATES_DIR/repository.csr -out $CERTIFICATES_DIR/repository.cer
 
   openssl pkcs12 -export -out $CERTIFICATES_DIR/repository.p12 -inkey $CERTIFICATES_DIR/repository.key \
@@ -226,7 +221,7 @@ function generate {
   fi
   openssl req -newkey rsa:$KEY_SIZE -nodes -out $CERTIFICATES_DIR/solr.csr -keyout $CERTIFICATES_DIR/solr.key -subj "$SOLR_CLIENT_CERT_DNAME"
 
-  openssl ca -config openssl.cnf -extensions server_cert -passin pass:$KEYSTORE_PASS -batch -notext \
+  openssl ca -config openssl.cnf -extensions clientServer_cert -passin pass:$KEYSTORE_PASS -batch -notext \
   -in $CERTIFICATES_DIR/solr.csr -out $CERTIFICATES_DIR/solr.cer
 
   openssl pkcs12 -export -out $CERTIFICATES_DIR/solr.p12 -inkey $CERTIFICATES_DIR/solr.key \

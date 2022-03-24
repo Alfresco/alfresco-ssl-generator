@@ -79,15 +79,15 @@ authorityKeyIdentifier = keyid:always,issuer
 basicConstraints = CA:true
 keyUsage = critical, digitalSignature, cRLSign, keyCertSign
 
-[ server_cert ]
-# Extensions for server certificates (`man x509v3_config`).
+[ clientServer_cert ]
+# Extensions for client/server certificates (`man x509v3_config`).
 basicConstraints = CA:FALSE
-nsCertType = server
-nsComment = "OpenSSL Generated Server Certificate"
+nsCertType = server, client
+nsComment = "OpenSSL Generated Client/Server Certificate"
 subjectKeyIdentifier = hash
 authorityKeyIdentifier = keyid,issuer:always
 keyUsage = critical, digitalSignature, keyEncipherment
-extendedKeyUsage = serverAuth
+extendedKeyUsage = serverAuth, clientAuth
 subjectAltName = @alt_names
 
 [ client_cert ]

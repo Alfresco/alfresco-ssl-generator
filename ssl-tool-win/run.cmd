@@ -296,7 +296,7 @@ powershell -Command "(gc -Encoding utf8 openssl.cnf) | Foreach-Object {$_ -repla
 openssl req -newkey rsa:%KEY_SIZE% -nodes -out %CERTIFICATES_DIR%\repository.csr ^
 -keyout %CERTIFICATES_DIR%\repository.key -subj "%REPO_CERT_DNAME%"
 
-openssl ca -config openssl.cnf -extensions server_cert -passin pass:%KEYSTORE_PASS% -batch -notext ^
+openssl ca -config openssl.cnf -extensions clientServer_cert -passin pass:%KEYSTORE_PASS% -batch -notext ^
 -in %CERTIFICATES_DIR%\repository.csr -out %CERTIFICATES_DIR%\repository.cer
 
 openssl pkcs12 -export -out %CERTIFICATES_DIR%/repository.p12 -inkey %CERTIFICATES_DIR%\repository.key ^
@@ -308,7 +308,7 @@ powershell -Command "(gc -Encoding utf8 openssl.cnf) | Foreach-Object {$_ -repla
 openssl req -newkey rsa:%KEY_SIZE% -nodes -out %CERTIFICATES_DIR%\solr.csr ^
 -keyout %CERTIFICATES_DIR%\solr.key -subj "%SOLR_CLIENT_CERT_DNAME%"
 
-openssl ca -config openssl.cnf -extensions server_cert -passin pass:%KEYSTORE_PASS% -batch -notext ^
+openssl ca -config openssl.cnf -extensions clientServer_cert -passin pass:%KEYSTORE_PASS% -batch -notext ^
 -in %CERTIFICATES_DIR%\solr.csr -out %CERTIFICATES_DIR%\solr.cer
 
 openssl pkcs12 -export -out %CERTIFICATES_DIR%\solr.p12 -inkey %CERTIFICATES_DIR%\solr.key ^

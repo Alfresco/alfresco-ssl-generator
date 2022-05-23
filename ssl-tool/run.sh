@@ -343,13 +343,7 @@ function generate {
   #
 
   # Create client (browser) certificate
-  keytool -importkeystore \
-  -srckeystore $CERTIFICATES_DIR/browser.p12 -destkeystore $CLIENT_KEYSTORES_DIR/browser.p12 \
-  -srcstoretype PKCS12 -deststoretype PKCS12 \
-  -srcstorepass $KEYSTORE_PASS -deststorepass $KEYSTORE_PASS \
-  -srcalias 1 -destalias browser \
-  -srckeypass $KEYSTORE_PASS -destkeypass $KEYSTORE_PASS \
-  -noprompt
+  cp $CERTIFICATES_DIR/browser.p12 $CLIENT_KEYSTORES_DIR/browser.p12
 
   #
   # Renaming files for current Alfresco Format

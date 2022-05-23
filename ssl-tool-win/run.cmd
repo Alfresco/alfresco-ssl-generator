@@ -428,13 +428,7 @@ REM CLIENT
 REM --------------------
 
 REM Create client (browser) certificate
-keytool -importkeystore ^
--srckeystore %CERTIFICATES_DIR%/browser.p12 -destkeystore %CLIENT_KEYSTORES_DIR%/browser.p12 ^
--srcstoretype PKCS12 -deststoretype PKCS12 ^
--srcstorepass %KEYSTORE_PASS% -deststorepass %KEYSTORE_PASS% ^
--srcalias 1 -destalias browser ^
--srckeypass %KEYSTORE_PASS% -destkeypass %KEYSTORE_PASS% ^
--noprompt
+copy %CERTIFICATES_DIR%/browser.p12 %CLIENT_KEYSTORES_DIR%/browser.p12
 
 REM Renaming files for current Alfresco Format
 IF "%ALFRESCO_FORMAT%" == "current" (

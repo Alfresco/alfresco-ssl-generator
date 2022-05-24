@@ -66,7 +66,7 @@ CA_DNAME="/C=GB/ST=UK/L=Maidenhead/O=Alfresco Software Ltd./OU=Unknown/CN=Custom
 # Distinguished name of the Server Certificate for Alfresco
 REPO_CERT_DNAME="/C=GB/ST=UK/L=Maidenhead/O=Alfresco Software Ltd./OU=Unknown/CN=Custom Alfresco Repository"
 # Distinguished name of the Server Certificate for SOLR
-SOLR_CLIENT_CERT_DNAME="/C=GB/ST=UK/L=Maidenhead/O=Alfresco Software Ltd./OU=Unknown/CN=Custom Alfresco Repository Client"
+SOLR_CERT_DNAME="/C=GB/ST=UK/L=Maidenhead/O=Alfresco Software Ltd./OU=Unknown/CN=Custom Alfresco Repository Client"
 # Distinguished name of the Browser Certificate for SOLR
 BROWSER_CLIENT_CERT_DNAME="/C=GB/ST=UK/L=Maidenhead/O=Alfresco Software Ltd./OU=Unknown/CN=Custom Browser Client"
 
@@ -75,8 +75,18 @@ CA_SERVER_NAME=localhost
 ALFRESCO_SERVER_NAME=localhost
 SOLR_SERVER_NAME=localhost
 
+# CA parameters
+SSL_BASE=ca
+SSL_CA_KEY=$SSL_BASE/private/ca.key.pem
+SSL_CA_CERT=$SSL_BASE/certs/ca.cert.pem
+SSL_CA_PASS=ca
+SSL_CA_DAYS=7300
+
 # RSA key length (1024, 2048, 4096)
 KEY_SIZE=2048
+
+# Caducity for generated server certificates (Alfresco, Solr)
+SSL_DAYS=3650
 
 # Keystore format (PKCS12, JKS, JCEKS)
 KEYSTORE_TYPE=JCEKS
@@ -91,6 +101,8 @@ TRUSTSTORE_PASS=truststore
 # Encryption secret key passwords
 ENC_STORE_PASS=password
 ENC_METADATA_PASS=password
+ENC_STORE_TYPE=PKCS12
+ENC_KEY_ALG="-keyalg AES -keysize 256"
 
 # Folder where keystores, truststores and cerfiticates are generated
 KEYSTORES_DIR=keystores
@@ -100,148 +112,132 @@ ZEPPELIN_KEYSTORES_DIR=keystores/zeppelin
 CLIENT_KEYSTORES_DIR=keystores/client
 CERTIFICATES_DIR=certificates
 
-# SCRIPT
-# Generates every keystore, trustore and certificate required for Alfresco SSL configuration
-function generate {
-
-  # Encryption keystore format: PKCS12 (default for "current"), JCEKS (default for "classic")
-  if [ "$ALFRESCO_FORMAT" == "current" ]; then
-    ENC_STORE_TYPE=PKCS12
-  else
-    ENC_STORE_TYPE=JCEKS
-  fi
-
-  # Key algorithm: AES (default for "current"), DESede (default for "classic")
-  if [ "$ALFRESCO_FORMAT" == "current" ]; then
-    ENC_KEY_ALG="-keyalg AES -keysize 256"
-  else
-    ENC_KEY_ALG="-keyalg DESede"
-  fi
-
-  # If target folder for Keystores is not empty, skip generation
-  if [ "$(ls -A $KEYSTORES_DIR)" ]; then
-    echo "Keystores folder is not empty, skipping generation process..."
-    exit 1
-  fi
-
-  # Remove previous working directories and certificates
-  if [ -d ca ]; then
-      rm -rf ca/*
-  fi
-
-  # Create folders for truststores, keystores and certificates
-  if [ ! -d "$KEYSTORES_DIR" ]; then
+create_ca_dirs() {
     mkdir -p $KEYSTORES_DIR
-  else
-    rm -rf $KEYSTORES_DIR/*
-  fi
-
-  if [ ! -d "$ALFRESCO_KEYSTORES_DIR" ]; then
     mkdir -p $ALFRESCO_KEYSTORES_DIR
-  else
-    rm -rf $ALFRESCO_KEYSTORES_DIR/*
-  fi
-
-  if [ ! -d "$SOLR_KEYSTORES_DIR" ]; then
     mkdir -p $SOLR_KEYSTORES_DIR
-  else
-    rm -rf $SOLR_KEYSTORES_DIR/*
-  fi
-
-  if [ "$ALFRESCO_VERSION" = "enterprise" ]; then
-    if [ ! -d "$ZEPPELIN_KEYSTORES_DIR" ]; then
-      mkdir -p $ZEPPELIN_KEYSTORES_DIR
-    else
-      rm -rf $ZEPPELIN_KEYSTORES_DIR/*
-    fi
-  fi
-
-  if [ ! -d "$CLIENT_KEYSTORES_DIR" ]; then
+    mkdir -p $ZEPPELIN_KEYSTORES_DIR
     mkdir -p $CLIENT_KEYSTORES_DIR
-  else
-    rm -rf $CLIENT_KEYSTORES_DIR/*
-  fi
-
-  if [ ! -d "$CERTIFICATES_DIR" ]; then
     mkdir -p $CERTIFICATES_DIR
-  else
+    mkdir -p ca
+    mkdir $SSL_BASE/{certs,crl,newcerts,private}
+    chmod 700 ca/private
+
+}
+
+cleanup_ca() {
+    rm -rf $SSL_BASE/*
+    rm -rf $KEYSTORES_DIR/*
+    rm -rf $ALFRESCO_KEYSTORES_DIR/*
+    rm -rf $SOLR_KEYSTORES_DIR/*
+    rm -rf $ZEPPELIN_KEYSTORES_DIR/*
+    rm -rf $CLIENT_KEYSTORES_DIR/*
     rm -rf $CERTIFICATES_DIR/*
-  fi
+    create_ca_dirs
+}
 
-  #
-  # CA
-  #
+create_ca_key(){
 
-  # Generate a new CA Entity
-  if [ ! -d ca ]; then
-    mkdir ca
-  fi
+    if [[ ! -e $SSL_BASE/index.txt ]];then
+        touch $SSL_BASE/index.txt
+    fi
+    echo "creating new ca key: $SSL_CA_KEY" 
+    openssl genrsa -aes256 -passout pass:$SSL_CA_PASS -out $SSL_CA_KEY $KEY_SIZE
+    chmod 400 $SSL_CA_KEY
 
-  mkdir ca/certs ca/crl ca/newcerts ca/private
-  chmod 700 ca/private
-  touch ca/index.txt
-  echo 1000 > ca/serial
+}
 
-  openssl genrsa -aes256 -passout pass:$KEYSTORE_PASS -out ca/private/ca.key.pem $KEY_SIZE
-  chmod 400 ca/private/ca.key.pem
+create_ca_cert(){
+
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+      sed -i '' "s/DNS.1.*/DNS.1 = $CA_SERVER_NAME/" openssl.cnf;
+    else
+      sed -i "s/DNS.1.*/DNS.1 = $CA_SERVER_NAME/" openssl.cnf;
+    fi
+
+    if [[ -e $SSL_CA_KEY ]];then
+
+        echo "creating new CA csr: $SSL_BASE/ca.cert.pem"
+        openssl req -config openssl.cnf -new \
+            -key $SSL_CA_KEY \
+            -out $SSL_BASE/ca.csr \
+            -subj "$CA_DNAME" \
+            -extensions v3_ca \
+            -sha256 \
+            -passin pass:$SSL_CA_PASS         
+
+        echo "creating new CA cert: $SSL_CA_CERT" 
+        openssl ca -create_serial \
+            -config openssl.cnf \
+            -batch \
+            -out $SSL_CA_CERT \
+            -days $SSL_CA_DAYS \
+            -keyfile $SSL_CA_KEY -passin pass:$SSL_CA_PASS \
+            -selfsign -extensions v3_ca \
+            -infiles $SSL_BASE/ca.csr 
+    else
+        echo "no CA key found - exiting ..."
+        exit 1
+    fi
+}
+
+create_server_cert() {
+
+  local SERVER_NAME="$1"
+  local CERT_DNAME="$2"
+  local CERT_NAME="$3" 
+  local CERT_PASSWORD="$4"
 
   if [[ "$OSTYPE" == "darwin"* ]]; then
-    sed -i '' "s/DNS.1.*/DNS.1 = $CA_SERVER_NAME/" openssl.cnf;
+    sed -i '' "s/DNS.1.*/DNS.1 = $SERVER_NAME/" openssl.cnf;
   else
-    sed -i "s/DNS.1.*/DNS.1 = $CA_SERVER_NAME/" openssl.cnf;
+    sed -i "s/DNS.1.*/DNS.1 = $SERVER_NAME/" openssl.cnf;
+  fi
+  
+  echo "creating new Alfresco cert: $CERTIFICATES_DIR/$CERT_NAME.key"
+  openssl req -newkey rsa:$KEY_SIZE -nodes -out $CERTIFICATES_DIR/$CERT_NAME.csr -keyout $CERTIFICATES_DIR/$CERT_NAME.key -subj "$CERT_DNAME"
+
+  openssl ca -config openssl.cnf -extensions clientServer_cert -passin pass:$SSL_CA_PASS -batch -notext \
+  -days $SSL_DAYS -in $CERTIFICATES_DIR/$CERT_NAME.csr -out $CERTIFICATES_DIR/$CERT_NAME.cer
+
+  openssl pkcs12 -export -out $CERTIFICATES_DIR/$CERT_NAME.p12 -inkey $CERTIFICATES_DIR/$CERT_NAME.key \
+  -in $CERTIFICATES_DIR/$CERT_NAME.cer -password pass:$CERT_PASSWORD -certfile $SSL_CA_CERT
+
+  openssl verify -CAfile $SSL_CA_CERT "$CERTIFICATES_DIR/$CERT_NAME.cer"
+  RESULT=$?
+  if [[ $RESULT != 0 ]];then
+      echo "failed to validate certificate path for $CERTIFICATES_DIR/$CERT_NAME.cer!"
+      exit 1
   fi
 
-  openssl req -config openssl.cnf \
-        -key ca/private/ca.key.pem \
-        -new -x509 -days 7300 -sha256 -extensions v3_ca \
-        -out ca/certs/ca.cert.pem \
-        -subj "$CA_DNAME" \
-        -passin pass:$KEYSTORE_PASS
-  chmod 444 ca/certs/ca.cert.pem
+}
 
-  # Generate Server Certificate for Alfresco (issued by just generated CA)
-  if [[ "$OSTYPE" == "darwin"* ]]; then
-    sed -i '' "s/DNS.1.*/DNS.1 = $ALFRESCO_SERVER_NAME/" openssl.cnf;
-  else
-    sed -i "s/DNS.1.*/DNS.1 = $ALFRESCO_SERVER_NAME/" openssl.cnf;
-  fi
-  openssl req -newkey rsa:$KEY_SIZE -nodes -out $CERTIFICATES_DIR/repository.csr -keyout $CERTIFICATES_DIR/repository.key -subj "$REPO_CERT_DNAME"
+create_solr_browser_cert() {
 
-  openssl ca -config openssl.cnf -extensions clientServer_cert -passin pass:$KEYSTORE_PASS -batch -notext \
-  -in $CERTIFICATES_DIR/repository.csr -out $CERTIFICATES_DIR/repository.cer
+  echo "creating new Solr cert: $CERTIFICATES_DIR/browser.p12"
 
-  openssl pkcs12 -export -out $CERTIFICATES_DIR/repository.p12 -inkey $CERTIFICATES_DIR/repository.key \
-  -in $CERTIFICATES_DIR/repository.cer -password pass:$KEYSTORE_PASS -certfile ca/certs/ca.cert.pem
-
-  # Server Certificate for SOLR (issued by just generated CA)
-  if [[ "$OSTYPE" == "darwin"* ]]; then
-    sed -i '' "s/DNS.1.*/DNS.1 = $SOLR_SERVER_NAME/" openssl.cnf;
-  else
-    sed -i "s/DNS.1.*/DNS.1 = $SOLR_SERVER_NAME/" openssl.cnf;
-  fi
-  openssl req -newkey rsa:$KEY_SIZE -nodes -out $CERTIFICATES_DIR/solr.csr -keyout $CERTIFICATES_DIR/solr.key -subj "$SOLR_CLIENT_CERT_DNAME"
-
-  openssl ca -config openssl.cnf -extensions clientServer_cert -passin pass:$KEYSTORE_PASS -batch -notext \
-  -in $CERTIFICATES_DIR/solr.csr -out $CERTIFICATES_DIR/solr.cer
-
-  openssl pkcs12 -export -out $CERTIFICATES_DIR/solr.p12 -inkey $CERTIFICATES_DIR/solr.key \
-  -in $CERTIFICATES_DIR/solr.cer -password pass:$KEYSTORE_PASS -certfile ca/certs/ca.cert.pem
-
-  # Client Certificate for SOLR (issued by just generated CA)
   openssl req -newkey rsa:$KEY_SIZE -nodes -out $CERTIFICATES_DIR/browser.csr -keyout $CERTIFICATES_DIR/browser.key \
   -subj "$BROWSER_CLIENT_CERT_DNAME"
 
-  openssl ca -config openssl.cnf -extensions client_cert -passin pass:$KEYSTORE_PASS -batch -notext \
-  -in $CERTIFICATES_DIR/browser.csr -out $CERTIFICATES_DIR/browser.cer
+  openssl ca -config openssl.cnf -extensions client_cert -passin pass:$SSL_CA_PASS -batch -notext \
+  -days $SSL_DAYS -in $CERTIFICATES_DIR/browser.csr -out $CERTIFICATES_DIR/browser.cer
 
   openssl pkcs12 -export -out $CERTIFICATES_DIR/browser.p12 -inkey $CERTIFICATES_DIR/browser.key \
-  -in $CERTIFICATES_DIR/browser.cer -password pass:$KEYSTORE_PASS -certfile ca/certs/ca.cert.pem
+  -in $CERTIFICATES_DIR/browser.cer -password pass:$KEYSTORE_PASS -certfile $SSL_CA_CERT
 
-  #
-  # SOLR
-  #
+  openssl verify -CAfile $SSL_CA_CERT "$CERTIFICATES_DIR/browser.cer"
+  RESULT=$?
+  if [[ $RESULT != 0 ]];then
+      echo "failed to validate certificate path for $CERTIFICATES_DIR/browser.cer!"
+      exit 1
+  fi
 
-  # Include CA and Alfresco certificates in SOLR Truststore
+    cp $CERTIFICATES_DIR/browser.p12 $CLIENT_KEYSTORES_DIR/browser.p12
+
+}
+
+create_solr_truststore() {
+
   keytool -import -trustcacerts -noprompt -alias alfresco.ca -file ca/certs/ca.cert.pem \
   -keystore ${SOLR_KEYSTORES_DIR}/ssl.repo.client.truststore -storetype $TRUSTSTORE_TYPE -storepass $TRUSTSTORE_PASS
 
@@ -251,15 +247,16 @@ function generate {
   keytool -importcert -noprompt -alias ssl.repo.client -file $CERTIFICATES_DIR/solr.cer \
   -keystore ${SOLR_KEYSTORES_DIR}/ssl.repo.client.truststore -storetype $TRUSTSTORE_TYPE -storepass $TRUSTSTORE_PASS
 
-  # Create SOLR TrustStore password file
   echo "aliases=alfresco.ca,ssl.repo,ssl.repo.client" >> ${SOLR_KEYSTORES_DIR}/ssl-truststore-passwords.properties
   echo "keystore.password=$TRUSTSTORE_PASS" >> ${SOLR_KEYSTORES_DIR}/ssl-truststore-passwords.properties
   echo "alfresco.ca.password=$TRUSTSTORE_PASS" >> ${SOLR_KEYSTORES_DIR}/ssl-truststore-passwords.properties
   echo "ssl.repo.password=$TRUSTSTORE_PASS" >> ${SOLR_KEYSTORES_DIR}/ssl-truststore-passwords.properties
   echo "ssl.repo.client.password=$TRUSTSTORE_PASS" >> ${SOLR_KEYSTORES_DIR}/ssl-truststore-passwords.properties
 
-  # Include SOLR Certificate in SOLR Keystore
-  # Also adding CA Certificate for historical reasons
+}
+
+create_solr_keystore() {
+
   keytool -importkeystore \
   -srckeystore $CERTIFICATES_DIR/solr.p12 -destkeystore ${SOLR_KEYSTORES_DIR}/ssl.repo.client.keystore \
   -srcstoretype PKCS12 -deststoretype $KEYSTORE_TYPE \
@@ -271,44 +268,30 @@ function generate {
   keytool -importcert -noprompt -alias ssl.alfresco.ca -file ca/certs/ca.cert.pem \
   -keystore ${SOLR_KEYSTORES_DIR}/ssl.repo.client.keystore -storetype $KEYSTORE_TYPE -storepass $KEYSTORE_PASS
 
-  # Create SOLR Keystore password file
   echo "aliases=ssl.alfresco.ca,ssl.repo.client" >> ${SOLR_KEYSTORES_DIR}/ssl-keystore-passwords.properties
   echo "keystore.password=$KEYSTORE_PASS" >> ${SOLR_KEYSTORES_DIR}/ssl-keystore-passwords.properties
   echo "ssl.repo.client.password=$KEYSTORE_PASS" >> ${SOLR_KEYSTORES_DIR}/ssl-keystore-passwords.properties
   echo "ssl.alfresco.ca.password=$KEYSTORE_PASS" >> ${SOLR_KEYSTORES_DIR}/ssl-keystore-passwords.properties
 
+}
 
-  #
-  # Zeppelin (SOLR JDBC)
-  #
+create_alfresco_truststore() {
 
-  # Copy ZEPPELIN stores
-  if [ "$ALFRESCO_VERSION" = "enterprise" ]; then
-
-    cp ${SOLR_KEYSTORES_DIR}/ssl.repo.client.keystore ${ZEPPELIN_KEYSTORES_DIR}/ssl.repo.client.keystore
-    cp ${SOLR_KEYSTORES_DIR}/ssl.repo.client.truststore ${ZEPPELIN_KEYSTORES_DIR}/ssl.repo.client.truststore
-
-  fi
-
-  #
-  # ALFRESCO
-  #
-
-  # Include CA and SOLR certificates in Alfresco Truststore
   keytool -import -trustcacerts -noprompt -alias alfresco.ca -file ca/certs/ca.cert.pem \
   -keystore ${ALFRESCO_KEYSTORES_DIR}/ssl.truststore -storetype $TRUSTSTORE_TYPE -storepass $TRUSTSTORE_PASS
 
   keytool -importcert -noprompt -alias ssl.repo.client -file $CERTIFICATES_DIR/solr.cer \
   -keystore ${ALFRESCO_KEYSTORES_DIR}/ssl.truststore -storetype $TRUSTSTORE_TYPE -storepass $TRUSTSTORE_PASS
 
-  # Create Alfresco TrustStore password file
   echo "aliases=alfresco.ca,ssl.repo.client" >> ${ALFRESCO_KEYSTORES_DIR}/ssl-truststore-passwords.properties
   echo "keystore.password=$TRUSTSTORE_PASS" >> ${ALFRESCO_KEYSTORES_DIR}/ssl-truststore-passwords.properties
   echo "alfresco.ca.password=$TRUSTSTORE_PASS" >> ${ALFRESCO_KEYSTORES_DIR}/ssl-truststore-passwords.properties
   echo "ssl.repo.client=$TRUSTSTORE_PASS" >> ${ALFRESCO_KEYSTORES_DIR}/ssl-truststore-passwords.properties
 
-  # Include Alfresco Certificate in Alfresco Keystore
-  # Also adding CA Certificate for historical reasons
+}
+
+create_alfresco_keystore() {
+
   keytool -importkeystore \
   -srckeystore $CERTIFICATES_DIR/repository.p12 -destkeystore ${ALFRESCO_KEYSTORES_DIR}/ssl.keystore \
   -srcstoretype PKCS12 -deststoretype $KEYSTORE_TYPE \
@@ -320,34 +303,39 @@ function generate {
   keytool -importcert -noprompt -alias ssl.alfresco.ca -file ca/certs/ca.cert.pem \
   -keystore ${ALFRESCO_KEYSTORES_DIR}/ssl.keystore -storetype $KEYSTORE_TYPE -storepass $KEYSTORE_PASS
 
-  # Create Alfresco Keystore password file
   echo "aliases=ssl.alfresco.ca,ssl.repo" >> ${ALFRESCO_KEYSTORES_DIR}/ssl-keystore-passwords.properties
   echo "keystore.password=$KEYSTORE_PASS" >> ${ALFRESCO_KEYSTORES_DIR}/ssl-keystore-passwords.properties
   echo "ssl.repo.password=$KEYSTORE_PASS" >> ${ALFRESCO_KEYSTORES_DIR}/ssl-keystore-passwords.properties
   echo "ssl.alfresco.ca.password=$KEYSTORE_PASS" >> ${ALFRESCO_KEYSTORES_DIR}/ssl-keystore-passwords.properties
 
-  # Generate Encryption Secret Key
+}
+
+create_zeppelin_stores() {
+
+  if [ "$ALFRESCO_VERSION" = "enterprise" ]; then
+
+    cp ${SOLR_KEYSTORES_DIR}/ssl.repo.client.keystore ${ZEPPELIN_KEYSTORES_DIR}/ssl.repo.client.keystore
+    cp ${SOLR_KEYSTORES_DIR}/ssl.repo.client.truststore ${ZEPPELIN_KEYSTORES_DIR}/ssl.repo.client.truststore
+
+  fi
+
+}
+
+create_encryption_keystore() {
+
   keytool -genseckey -alias metadata -keypass $ENC_METADATA_PASS -storepass $ENC_STORE_PASS -keystore ${ALFRESCO_KEYSTORES_DIR}/keystore \
   -storetype $ENC_STORE_TYPE $ENC_KEY_ALG
 
-  # Create Alfresco Encryption password file
   echo "aliases=metadata" >> ${ALFRESCO_KEYSTORES_DIR}/keystore-passwords.properties
   echo "keystore.password=$ENC_STORE_PASS" >> ${ALFRESCO_KEYSTORES_DIR}/keystore-passwords.properties
   echo "metadata.keyData=" >> ${ALFRESCO_KEYSTORES_DIR}/keystore-passwords.properties
   echo "metadata.algorithm=DESede" >> ${ALFRESCO_KEYSTORES_DIR}/keystore-passwords.properties
   echo "metadata.password=$ENC_METADATA_PASS" >> ${ALFRESCO_KEYSTORES_DIR}/keystore-passwords.properties
 
+}
 
-  #
-  # CLIENT
-  #
+apply_alfresco_format() {
 
-  # Create client (browser) certificate
-  cp $CERTIFICATES_DIR/browser.p12 $CLIENT_KEYSTORES_DIR/browser.p12
-
-  #
-  # Renaming files for current Alfresco Format
-  #
   if [ "$ALFRESCO_FORMAT" = "current" ]; then
     rm ${SOLR_KEYSTORES_DIR}/ssl-truststore-passwords.properties
     rm ${SOLR_KEYSTORES_DIR}/ssl-keystore-passwords.properties
@@ -359,6 +347,38 @@ function generate {
     mv ${ZEPPELIN_KEYSTORES_DIR}/ssl.repo.client.keystore ${ZEPPELIN_KEYSTORES_DIR}/ssl-repo-client.keystore
     mv ${ZEPPELIN_KEYSTORES_DIR}/ssl.repo.client.truststore ${ZEPPELIN_KEYSTORES_DIR}/ssl-repo-client.truststore
   fi
+
+}
+
+# SCRIPT
+# Generates every keystore, trustore and certificate required for Alfresco SSL configuration
+function generate {
+
+  cleanup_ca
+
+  create_ca_key
+
+  create_ca_cert
+
+  create_server_cert $ALFRESCO_SERVER_NAME "$REPO_CERT_DNAME" "repository" $KEYSTORE_PASS
+
+  create_server_cert $SOLR_SERVER_NAME "$SOLR_CERT_DNAME" "solr" $KEYSTORE_PASS
+
+  create_solr_browser_cert
+
+  create_solr_truststore
+
+  create_solr_keystore
+
+  create_alfresco_truststore
+
+  create_alfresco_keystore
+  
+  create_zeppelin_stores
+
+  create_encryption_keystore
+
+  apply_alfresco_format
 
 }
 
@@ -419,7 +439,7 @@ do
         ;;
         # DName for SOLR certificate
         -solrcertdname)
-            SOLR_CLIENT_CERT_DNAME="$2"
+            SOLR_CERT_DNAME="$2"
             shift
         ;;
         # DName for Browser certificate
@@ -447,6 +467,11 @@ do
             ALFRESCO_FORMAT="$2"
             shift
         ;;
+        # SSL Days: caducity of the certificates in number of days 
+        -ssldays)
+            SSL_DAYS="$2"
+            shift
+        ;;
         *)
             echo "An invalid parameter was received: $1"
             echo "Allowed parameters:"
@@ -466,6 +491,7 @@ do
             echo "  -alfrescoservername"
             echo "  -solrservername"
             echo "  -alfrescoformat"
+            echo "  -ssldays"
             exit 1
         ;;
     esac

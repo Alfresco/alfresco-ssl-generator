@@ -4,33 +4,33 @@ default_ca      = local_ca
 # Default location of directories and files needed to generate certificates.
 #
 [ local_ca ]
-dir             = /opt/alfresco/etc/ssl/applianceCA
+dir             = @@DEFAULT_CA_DIR@@
 certificate     = $dir/certs/rootCA.crt
 database        = $dir/index.txt
 new_certs_dir   = $dir/signedcerts
 private_key     = $dir/private/rootCA.key
 serial          = $dir/serial
-#       
+#
 # For certificate revocation lists.
 crlnumber         = $dir/crlnumber
 crl               = $dir/crl/ca.crl.pem
 crl_extensions    = crl_ext
 default_crl_days  = 30
-#       
+#
 
 # Default expiration and encryption policies for certificates.
 #
 default_crl_days        = 365
 default_days            = 3650
 default_md              = sha256
-#       
+#
 policy          = local_ca_policy
 
 #
 # Copy extensions specified in the certificate request
 #
 copy_extensions = copy
-#       
+#
 #
 # Default policy to use when generating server certificates.  The following
 # fields must be defined in the server certificate.
@@ -49,7 +49,7 @@ default_bits        = 2048
 distinguished_name  = req_distinguished_name
 string_mask         = utf8only
 default_md      = sha256
-#       
+#
 prompt                  = no
 
 #
@@ -94,7 +94,7 @@ extendedKeyUsage = clientAuth
 authorityKeyIdentifier=keyid:always
 
 [alt_names]
-DNS.1 = alf-appliance-7.ecm4u.intra
+DNS.1 = @@ALT_NAMES_DNS@@
 
 #
 #

@@ -7,8 +7,14 @@ if [ -f $ALF_GENSSL_CUSTOM_CONFIG ]; then
     . $ALF_GENSSL_CUSTOM_CONFIG
 fi
 
+: ${SSL_CA_PASS:=alfresco}
+: ${META_PASSWORD:=alfresco}
+: ${REPO_PASSWORD:=alfresco}
+: ${SOLR_PASSWORD:=alfresco}
+: ${BROWSER_IMP_PW:=alfresco}
+
 : ${ALF_KEYSTORE_FORMAT:=classic} # classic | current
-: ${SSL_BASE:=/opt/alfresco/etc/ssl}
+: ${SSL_BASE:=./ca}
 : ${SSL_CA_NAME:=applianceCA}
 : ${SSL_KEYSTORE:=$SSL_BASE/keystore}
 
@@ -76,7 +82,7 @@ SSL_CA_CERT=$SSL_BASE/$SSL_CA_NAME/certs/rootCA.crt
 
 # metadata key algorithm used for encryption: AES (default for "current"), DESede (default for "classic") # RSA
 if [ "$ALF_KEYSTORE_FORMAT" == "current" ]; then
-    META_KEYSTORE_KEY_ALG=AES # 
+    META_KEYSTORE_KEY_ALG=AES #
     META_KEYSTORE_KEY_SIZE=256
     KEYSTORE_TYPE=PKCS12
     TRUSTSTORE_TYPE=JCEKS
@@ -87,5 +93,5 @@ else
     TRUSTSTORE_TYPE=JCEKS
 fi
 
-: ${OPENSSL_CONF:=$ALF_HOME/scripts/tools/alf-genssl/alf-genssl-openssl.cnf} # openssl ENV variable could be exported to avoid -config param
+: ${OPENSSL_CONF:=./openssl.cnf} # openssl ENV variable could be exported to avoid -config param
 export OPENSSL_CONF

@@ -19,8 +19,6 @@ fi
 # check password variables or generate if not set
 # CA key password
 if [[ -z "$SSL_CA_PASS" ]];then
-    # SSL_CA_PASS="$(pwgen 20 1)" # generate one password with 20 chars length
-    # echo "SSL_CA_PASS=$SSL_CA_PASS" >> "$ALF_GENSSL_CUSTOM_CONFIG"
     echo "SSL_CA_PASS not set - aborting"
     exit 1
 fi
@@ -43,8 +41,16 @@ if [[ -z "$SOLR_PASSWORD" ]];then
     exit 1
 fi
 
-
 ########## END setup environment ##########
+
+create_custom_openssl_conf(){
+  local LOCAL_SERVER_NAME="$1"
+
+  rm -f openssl.cnf
+  ESCAPED_REPLACE_DIR=$(printf '%s\n' "$SSL_BASE/$SSL_CA_NAME" | sed -e 's/[\/&]/\\&/g')
+  ESCAPED_REPLACE_SERVER_NAME=$(printf '%s\n' "$LOCAL_SERVER_NAME" | sed -e 's/[\/&]/\\&/g')
+  sed "s/@@DEFAULT_CA_DIR@@/$ESCAPED_REPLACE_DIR/g; s/@@ALT_NAMES_DNS@@/$ESCAPED_REPLACE_SERVER_NAME/g" alf-genssl-openssl.cnf > openssl.cnf
+}
 
 create_ca_dirs(){
     mkdir -p $SSL_BASE/$SSL_CA_NAME/{certs,signedcerts,private}
@@ -67,7 +73,7 @@ create_ca_key(){
         touch $SSL_BASE/$SSL_CA_NAME/index.txt
     fi
     if [[ ! -e "$SSL_CA_KEY" ]]; then
-        echo "creating new ca key: $SSL_CA_KEY" 
+        echo "creating new ca key: $SSL_CA_KEY"
         openssl genrsa -aes256 -passout pass:$SSL_CA_PASS -out $SSL_CA_KEY $KEY_SIZE
         chmod 400 $SSL_CA_KEY
     fi
@@ -81,25 +87,25 @@ create_ca_cert(){
             -out $SSL_BASE/ca.csr \
             -subj "$CA_SUBJ" \
             -extensions v3_ca \
-            -passin pass:$SSL_CA_PASS 
+            -passin pass:$SSL_CA_PASS
 
         # to check csr details:
         # openssl req -text -noout -verify -in $SSL_BASE/ca.csr
 
         # now create new CA cert
-        # -create_serial is especially important. 
-        # Many HOW-TOs will have you echo "01" into the serial file thus starting the serial number at 1, 
-        # and using 8-bit serial numbers instead of 128-bit serial numbers. This will generate a random 
-        # 128-bit serial number to start with. The randomness helps to ensure that if you make a mistake 
+        # -create_serial is especially important.
+        # Many HOW-TOs will have you echo "01" into the serial file thus starting the serial number at 1,
+        # and using 8-bit serial numbers instead of 128-bit serial numbers. This will generate a random
+        # 128-bit serial number to start with. The randomness helps to ensure that if you make a mistake
         # and start over, you won't overwrite existing serial numbers out there.
-        echo "creating new ca cert: $SSL_CA_CERT" 
+        echo "creating new ca cert: $SSL_CA_CERT"
         openssl ca -create_serial \
             -batch \
             -out $SSL_CA_CERT \
             -days $SSL_CA_DAYS \
             -keyfile $SSL_CA_KEY -passin pass:$SSL_CA_PASS \
             -selfsign -extensions v3_ca \
-            -infiles $SSL_BASE/ca.csr 
+            -infiles $SSL_BASE/ca.csr
         cp $SSL_CA_CERT $SSL_BASE/certs/
     else
         echo "no ca key found - exiting ..."
@@ -109,17 +115,17 @@ create_ca_cert(){
 
 
 create_metadata_keystore(){
-    
+
     create_ca_dirs
-    
-    #####  keystore for content encryption  #####  
-    # we need to support an emtpy name for alfresco's pattern without a name 
+
+    #####  keystore for content encryption  #####
+    # we need to support an emtpy name for alfresco's pattern without a name
     if [ -z "$SSL_META_NAME" ] && [ "${SSL_META_NAME+xxx}" = "xxx" ]; then  # SSL_META_NAME is set but empty
         SSL_META_NAME=metadata
         SSL_META_ALIAS=$SSL_META_NAME
         SSL_META_KEYSTORE=$SSL_KEYSTORE/$SSL_META_NAME.keystore
         SSL_META_KEYSTORE_PROP=keystore-passwords.properties
-    else 
+    else
         : ${SSL_META_NAME:=metadata} # in case variable is not set at all
         : ${SSL_META_ALIAS:=$SSL_META_NAME}
         : ${SSL_META_KEYSTORE:=$SSL_KEYSTORE/$SSL_META_NAME.keystore}
@@ -154,7 +160,7 @@ create_metadata_keystore(){
 
     if [[ $RESULT -eq 0 ]]; then
         # Create Alfresco Encryption password file
-        echo "    generating ${SSL_META_NAME}keystore-passwords.properties ..." 
+        echo "    generating ${SSL_META_NAME}keystore-passwords.properties ..."
 
         echo "aliases=$SSL_META_ALIAS" > ${SSL_KEYSTORE}/$SSL_META_KEYSTORE_PROP
         echo "# The password protecting the keystore entries" >> ${SSL_KEYSTORE}/$SSL_META_KEYSTORE_PROP
@@ -163,8 +169,6 @@ create_metadata_keystore(){
         echo "metadata.keyData=" >> ${SSL_KEYSTORE}/$SSL_META_KEYSTORE_PROP
         echo "metadata.algorithm=$META_KEYSTORE_KEY_ALG" >> ${SSL_KEYSTORE}/$SSL_META_KEYSTORE_PROP
         echo "metadata.password=$META_PASSWORD" >> ${SSL_KEYSTORE}/$SSL_META_KEYSTORE_PROP
-
-        update_config
 
         if [[ $BACKUP_METADATA_KEYSTORE ]]; then
             echo ""
@@ -189,7 +193,7 @@ create_metadata_keystore(){
 }
 
 create_csr(){
-    local SSL_NAME="$1" 
+    local SSL_NAME="$1"
     local SSL_ALIAS="$2"
     local SSL_PASSWORD="$3"
     local SSL_DNAME="$4"
@@ -209,7 +213,7 @@ create_csr(){
 }
 
 create_cert(){
-    local SSL_NAME="$1" 
+    local SSL_NAME="$1"
     local SSL_ALIAS="$2"
     local SSL_PASSWORD="$3"
     if [[ -z $4 ]]; then
@@ -217,7 +221,7 @@ create_cert(){
     else
         SERVER_NAME=$4
     fi
-   
+
     echo "create_cert: SERVER_NAME: $SERVER_NAME"
     # replace alternative name in openssl config
     if [[ "$OSTYPE" == "darwin"* ]]; then
@@ -231,9 +235,9 @@ create_cert(){
     # openssl x509 -extensions server_cert -passin pass:$SSL_CA_PASS -CA $SSL_CA_CERT -CAkey $SSL_CA_KEY \
     #     -req -in $SSL_BASE/$SSL_NAME.csr -out "$SSL_BASE/certs/$SSL_NAME.crt" -days $SSL_DAYS
     openssl ca -extensions server_cert -passin pass:$SSL_CA_PASS -batch\
-        -days $SSL_DAYS -in $SSL_BASE/$SSL_NAME.csr -out "$SSL_BASE/certs/$SSL_NAME.crt" # -config $OPENSSL_CONF 
+        -days $SSL_DAYS -in $SSL_BASE/$SSL_NAME.csr -out "$SSL_BASE/certs/$SSL_NAME.crt" # -config $OPENSSL_CONF
     # openssl x509 -in "$SSL_BASE/certs/$SSL_NAME.crt" -text
-    
+
     openssl verify -CAfile $SSL_CA_CERT "$SSL_BASE/certs/$SSL_NAME.crt"
     RESULT=$?
     if [[ $RESULT != 0 ]];then
@@ -243,7 +247,7 @@ create_cert(){
 }
 
 import_cert(){
-    local SSL_NAME="$1" 
+    local SSL_NAME="$1"
     local SSL_ALIAS="$2"
     local SSL_PASSWORD="$3"
 
@@ -279,11 +283,10 @@ import_cert(){
 }
 
 export_client_certs(){
-    local SSL_NAME="$1" 
+    local SSL_NAME="$1"
     local SSL_ALIAS="$2"
     local SSL_PASSWORD="$3"
 
-    
     # create browser store
     rm -f "$SSL_BASE/certs/browser-${SSL_NAME}.p12"
     keytool -importkeystore -srckeystore "${SSL_KEYSTORE}/$SSL_NAME.keystore" -srcstorepass "$SSL_PASSWORD" \
@@ -295,15 +298,11 @@ export_client_certs(){
 }
 
 create_cert_full(){
-    local SSL_NAME="$1" 
+    local SSL_NAME="$1"
     local SSL_ALIAS="$2"
     local SSL_PASSWORD="$3"
     local SSL_DNAME="$4"
-    if [[ -z $5 ]]; then
-        SERVER_NAME=localhost
-    else
-        SERVER_NAME=$5
-    fi
+    local SERVER_NAME=$5
 
     echo "create_cert_full: SERVER_NAME: $SERVER_NAME"
 
@@ -311,84 +310,6 @@ create_cert_full(){
     create_cert $SSL_NAME $SSL_ALIAS "$SSL_PASSWORD" "$SERVER_NAME"
     import_cert $SSL_NAME $SSL_ALIAS "$SSL_PASSWORD"
     export_client_certs  $SSL_NAME $SSL_ALIAS "$SSL_PASSWORD"
-}
-
-update_config(){
-
-    if which confset > /dev/null;then 
-        if [[ -e $ALF_HOME/conf/alfresco-global.properties ]];then
-            if [[ $BACKUP_METADATA_KEYSTORE == 1 ]]; then
-                echo "    metadata key has been recreated - configuring backup key ..."
-                confset \
-                    encryption.keystore.backup.location="\${dir.keystore}/../backup-keystore/$SSL_META_KEYSTORE_OLD" \
-                    encryption.keystore.backup.type=$(sed -n -e 's/^encryption.keystore.backup.type=\(a-zA-Z\)*/\1/p' $ALF_HOME/conf/alfresco-global.properties) \
-                    encryption.keystore.backup.keyMetaData.location="$(sed -n -e 's/^encryption.keystore.backup.keyMetaData.location=\(.*\)$/\1/p' $ALF_HOME/conf/alfresco-global.properties)" \
-                    $ALF_HOME/conf/alfresco-global.properties
-                
-                if [[ $? != 0 ]];then
-                    echo "ERROR: configuring encryption.keystore.backup failed"
-                    echo "you must fix this not to loose your content!"
-                    exit 1
-                fi
-            fi
-
-            confset dir.keystore=${SSL_KEYSTORE} $ALF_HOME/conf/alfresco-global.properties
-            confset \
-                encryption.ssl.keystore.location="\${dir.keystore}/$SSL_REPO_NAME.keystore" \
-                encryption.ssl.keystore.type="$KEYSTORE_TYPE" \
-                encryption.ssl.keystore.keyMetaData.location="\${dir.keystore}/$SSL_REPO_NAME-keystore-passwords.properties" \
-                encryption.ssl.truststore.location="\${dir.keystore}/$SSL_REPO_NAME.truststore" \
-                encryption.ssl.truststore.type=$TRUSTSTORE_TYPE \
-                encryption.ssl.truststore.keyMetaData.location="\${dir.keystore}/$SSL_REPO_NAME-truststore-passwords.properties" \
-                encryption.keystore.location="\${dir.keystore}/$SSL_META_NAME.keystore" \
-                encryption.keystore.type="$KEYSTORE_TYPE" \
-                encryption.keystore.keyMetaData.location="\${dir.keystore}/$SSL_META_NAME-keystore-passwords.properties" \
-                $ALF_HOME/conf/alfresco-global.properties
-        else
-            echo "WARNING: $ALF_HOME/conf/alfresco-global.properties not found!"
-        fi
-
-        if [[ -e /etc/default/solr.in.sh ]]; then
-            confset \
-                SOLR_SSL_KEY_STORE="$SSL_SOLR_KEYSTORE" \
-                SOLR_SSL_KEY_STORE_TYPE=$KEYSTORE_TYPE \
-                SOLR_SSL_KEY_STORE_PASSWORD="$SOLR_PASSWORD" \
-                SOLR_SSL_TRUST_STORE="$SSL_SOLR_TRUSTSTORE" \
-                SOLR_SSL_TRUST_STORE_PASSWORD="$SOLR_PASSWORD" \
-                /etc/default/solr.in.sh
-        fi
-
-        if [[ ! -z $SOLR_CORE_TEMPLATE ]] && [[ -e $SOLR_CORE_TEMPLATE ]];then
-            confset \
-                alfresco.encryption.ssl.keystore.type="$KEYSTORE_TYPE" \
-                alfresco.encryption.ssl.keystore.location="${SSL_KEYSTORE}/$SSL_SOLR_NAME.keystore" \
-                alfresco.encryption.ssl.keystore.passwordFileLocation="${SSL_KEYSTORE}/$SSL_SOLR_NAME-keystore-passwords.properties" \
-                alfresco.encryption.ssl.truststore.type=$TRUSTSTORE_TYPE \
-                alfresco.encryption.ssl.truststore.location="${SSL_KEYSTORE}/$SSL_SOLR_NAME.truststore" \
-                alfresco.encryption.ssl.truststore.passwordFileLocation="${SSL_KEYSTORE}/$SSL_SOLR_NAME-truststore-passwords.properties" \
-                $SOLR_CORE_TEMPLATE/conf/solrcore.properties \
-                $SOLR_HOME/alfresco/rerank/conf/solrcore.properties \
-                $SOLR_HOME/alfresco/conf/solrcore.properties \
-                $SOLR_HOME/alfresco/rerank/conf/solrcore.properties \
-                $SOLR_HOME/archive/conf/solrcore.properties
-        fi
-      
-
-        if [[ -e $ALF_HOME/tomcat/conf/server.xml ]] && which xmlstarlet > /dev/null && [[ ! -z $ALF_TOMCAT_SSL_PORT ]];then
-            xmlstarlet ed --inplace --update '/Server/Service/Connector[@port='$ALF_TOMCAT_SSL_PORT']/@keystoreFile' --value "${SSL_KEYSTORE}/$SSL_REPO_NAME.keystore"  /opt/alfresco/tomcat/conf/server.xml
-            xmlstarlet ed --inplace --update '/Server/Service/Connector[@port='$ALF_TOMCAT_SSL_PORT']/@keystorePass' --value "$REPO_PASSWORD"  /opt/alfresco/tomcat/conf/server.xml
-            xmlstarlet ed --inplace --update '/Server/Service/Connector[@port='$ALF_TOMCAT_SSL_PORT']/@keystoreType' --value "$KEYSTORE_TYPE"  /opt/alfresco/tomcat/conf/server.xml
-            xmlstarlet ed --inplace --update '/Server/Service/Connector[@port='$ALF_TOMCAT_SSL_PORT']/@truststoreFile' --value "${SSL_KEYSTORE}/$SSL_REPO_NAME.truststore"  /opt/alfresco/tomcat/conf/server.xml
-            xmlstarlet ed --inplace --update '/Server/Service/Connector[@port='$ALF_TOMCAT_SSL_PORT']/@truststorePass' --value "$REPO_PASSWORD"  /opt/alfresco/tomcat/conf/server.xml
-            xmlstarlet ed --inplace --update '/Server/Service/Connector[@port='$ALF_TOMCAT_SSL_PORT']/@truststoreType' --value "$TRUSTSTORE_TYPE"  /opt/alfresco/tomcat/conf/server.xml
-        else
-            echo "WARNING: please ajust tomcat's server.xml"
-        fi
-    else
-        echo "sorry - command not supported here. Are you running from a ecm4u Alfresco Virtual Appliance?"
-        exit 1
-    fi
-
 }
 
 
@@ -439,13 +360,15 @@ done
 case "$1" in
     ca)
         cleanup_ca
+        create_custom_openssl_conf "$CA_SERVER_NAME"
         create_ca_key
         create_ca_cert
         ;;
     keystores)
-        create_cert_full "$SSL_REPO_NAME" "$SSL_REPO_ALIAS" "$REPO_PASSWORD" "$REPO_CERT_DNAME" $(hostname -f)
-        create_cert_full "$SSL_SOLR_NAME" "$SSL_SOLR_ALIAS" "$SOLR_PASSWORD" "$SOLR_CERT_DNAME" $(hostname -f)
-        update_config
+        create_custom_openssl_conf "$ALFRESCO_SERVER_NAME"
+        create_cert_full "$SSL_REPO_NAME" "$SSL_REPO_ALIAS" "$REPO_PASSWORD" "$REPO_CERT_DNAME" "$ALFRESCO_SERVER_NAME"
+        create_custom_openssl_conf "$SOLR_SERVER_NAME"
+        create_cert_full "$SSL_SOLR_NAME" "$SSL_SOLR_ALIAS" "$SOLR_PASSWORD" "$SOLR_CERT_DNAME" "$SOLR_SERVER_NAME"
         ;;
     createcsr)
         echo create_csr "$SSL_REPO_NAME" "$SSL_REPO_ALIAS" "$REPO_PASSWORD" "$REPO_CERT_DNAME"
@@ -453,8 +376,10 @@ case "$1" in
 
         ;;
     createcert)
-        create_cert $SSL_REPO_NAME $SSL_REPO_ALIAS "$REPO_PASSWORD" $(hostname -f)
-        create_cert $SSL_SOLR_NAME $SSL_SOLR_ALIAS "$SOLR_PASSWORD" $(hostname -f)
+        create_custom_openssl_conf "$ALFRESCO_SERVER_NAME"
+        create_cert $SSL_REPO_NAME $SSL_REPO_ALIAS "$REPO_PASSWORD" "$ALFRESCO_SERVER_NAME"
+        create_custom_openssl_conf "$SOLR_SERVER_NAME"
+        create_cert $SSL_SOLR_NAME $SSL_SOLR_ALIAS "$SOLR_PASSWORD" "$SOLR_SERVER_NAME"
         ;;
     importcert)
         import_cert $SSL_REPO_NAME $SSL_REPO_ALIAS "$REPO_PASSWORD"
@@ -464,9 +389,6 @@ case "$1" in
         export_client_certs $SSL_REPO_NAME $SSL_REPO_ALIAS "$REPO_PASSWORD"
         export_client_certs $SSL_SOLR_NAME $SSL_SOLR_ALIAS "$SOLR_PASSWORD"
         ;;
-    updateconfig)
-        update_config
-        ;;
     cadirs)
         create_ca_dirs
         ;;
@@ -474,16 +396,18 @@ case "$1" in
         cleanup_ca
         ;;
     create-ca-key)
+        create_custom_openssl_conf "$CA_SERVER_NAME"
         create_ca_key
         ;;
     create-ca-cert)
+        create_custom_openssl_conf "$CA_SERVER_NAME"
         create_ca_cert
         ;;
     metadatakeystore)
         create_metadata_keystore
-        ;;    
+        ;;
     *)
-        echo "Usage: $0 {keystores|createcsr|createcert|importcert|exportclientcerts|updateconfig|cadirs|cleanup-ca|create-ca-key|create-ca-cert|metadatakeystore }"
+        echo "Usage: $0 {keystores|createcsr|createcert|importcert|exportclientcerts|cadirs|cleanup-ca|create-ca-key|create-ca-cert|metadatakeystore }"
         exit 1
         ;;
 

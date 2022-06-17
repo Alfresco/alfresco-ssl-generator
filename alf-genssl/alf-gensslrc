@@ -1,0 +1,91 @@
+# alf-gensslrc
+
+# passwords and custom overwrites are loaded from ALF_GENSSL_CUSTOM_CONFIG
+ALF_GENSSL_CUSTOM_CONFIG=${ALF_GENSSL_CUSTOM_CONFIG:=/opt/alfresco/scripts/scriptenv-alf}
+# load custom overwrites
+if [ -f $ALF_GENSSL_CUSTOM_CONFIG ]; then
+    . $ALF_GENSSL_CUSTOM_CONFIG
+fi
+
+: ${ALF_KEYSTORE_FORMAT:=classic} # classic | current
+: ${SSL_BASE:=/opt/alfresco/etc/ssl}
+: ${SSL_CA_NAME:=applianceCA}
+: ${SSL_KEYSTORE:=$SSL_BASE/keystore}
+
+# set variable defaults if not already set
+: ${ALF_CA_CN:=Alfresco Appliance Root Certificate Authority}
+: ${ALF_REPO_CN:=Alfresco Repository}
+: ${ALF_SOLR_CN:=Alfresco Solr}
+: ${ALF_OU:=Unknown}
+: ${ALF_L:=Stuttgart}
+: ${ALF_O:=ecm4u GmbH}
+: ${ALF_ST:=Baden-Wuerttemberg}
+: ${ALF_C:=DE}
+
+# Distinguished name of the CA in openssl format
+: ${CA_SUBJ:="/CN=$ALF_CA_CN/O=$ALF_O/OU=$ALF_OU/ST=$ALF_ST/L=$ALF_L/C=$ALF_C"}
+
+# dnames in keytool format in reverse order
+# Distinguished name of the Server Certificate for Alfresco
+REPO_CERT_DNAME="CN=${ALF_REPO_CN}, OU=${ALF_OU}, O=${ALF_O}, L=${ALF_L}, ST=${ALF_ST}, C=${ALF_C}"
+# Distinguished name of the Server Certificate for SOLR
+SOLR_CERT_DNAME="CN=${ALF_SOLR_CN}, OU=${ALF_OU}, O=${ALF_O}, L=${ALF_L}, ST=${ALF_ST}, C=${ALF_C}"
+
+# Alfresco and SOLR server names, to be used as Alternative Name in the certificates
+: ${CA_SERVER_NAME:=localhost}
+: ${ALFRESCO_SERVER_NAME:=localhost}
+: ${SOLR_SERVER_NAME:=localhost}
+
+
+# CA key location
+# CA cert for signing und trust
+: ${SSL_DAYS:=3650} # ssl certs 10 years
+: ${SSL_CA_DAYS:=7300} # CA 20 years
+: ${SSL_CA_ALIAS:=ecm4uca}
+
+SSL_CA_KEY=$SSL_BASE/$SSL_CA_NAME/private/rootCA.key
+SSL_CA_CERT=$SSL_BASE/$SSL_CA_NAME/certs/rootCA.crt
+
+# cert for nginx or apache
+: ${SSL_HTTP_KEY:=$SSL_BASE/private/${SSL_CERTNAME}-http.key}
+: ${SSL_HTTP_CSR:=$SSL_BASE/${SSL_CERTNAME}-http.csr}
+: ${SSL_HTTP_CERT:=$SSL_BASE/certs/${SSL_CERTNAME}-http.crt}
+
+# keystore for content encryption
+
+# cert Alfresco repo keystore
+: ${SSL_REPO_NAME:=repo}
+: ${SSL_REPO_ALIAS:=repo}
+
+# cert for solr keystore
+: ${SSL_SOLR_KEYSTORE:=$SSL_KEYSTORE/solr.keystore}
+: ${SSL_SOLR_TRUSTSTORE:=$SSL_KEYSTORE/solr.truststore}
+: ${SSL_SOLR_NAME:=solr}
+: ${SSL_SOLR_ALIAS:=ssl.repo.client}
+: ${SSL_SOLR_CSR:=$SSL_BASE/solr.csr}
+: ${SSL_SOLR_CERT:=$SSL_BASE/certs/solr.crt}
+
+: ${SOLR_CORE_TEMPLATE:=/opt/alfresco/alfresco-search-services/solrhome/templates/rerank} # conf/solrcore.properties
+: ${SOLR_HOME:=/var/lib/solr/solrhome}
+
+: ${KEYSTORE_KEY_ALG:=RSA}
+# RSA key length (1024, 2048, 4096)
+: ${KEY_SIZE:=2048}
+
+: ${SSL_META_NAME:=metadata}
+
+# metadata key algorithm used for encryption: AES (default for "current"), DESede (default for "classic") # RSA
+if [ "$ALF_KEYSTORE_FORMAT" == "current" ]; then
+    META_KEYSTORE_KEY_ALG=AES # 
+    META_KEYSTORE_KEY_SIZE=256
+    KEYSTORE_TYPE=PKCS12
+    TRUSTSTORE_TYPE=JCEKS
+else
+    META_KEYSTORE_KEY_ALG=AES #DESede
+    META_KEYSTORE_KEY_SIZE=256 #168
+    KEYSTORE_TYPE=JCEKS #JCEKS
+    TRUSTSTORE_TYPE=JCEKS
+fi
+
+: ${OPENSSL_CONF:=$ALF_HOME/scripts/tools/alf-genssl/alf-genssl-openssl.cnf} # openssl ENV variable could be exported to avoid -config param
+export OPENSSL_CONF

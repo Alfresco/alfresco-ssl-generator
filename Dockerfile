@@ -11,6 +11,9 @@ RUN yum -y update && \
     yum -y install openssl openssl-devel && \
     yum clean all
 
+# Put keytool in the path
+RUN ln -s /usr/lib/jvm/jre/bin/keytool /usr/local/bin
+
 # Copy OpenSSL configuration and generator script
 COPY ["ssl-tool/openssl.cnf", "ssl-tool/run.sh", "./"]
 

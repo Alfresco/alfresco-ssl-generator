@@ -356,8 +356,10 @@ function generate {
     rm ${ALFRESCO_KEYSTORES_DIR}/keystore-passwords.properties
     mv ${SOLR_KEYSTORES_DIR}/ssl.repo.client.truststore ${SOLR_KEYSTORES_DIR}/ssl-repo-client.truststore
     mv ${SOLR_KEYSTORES_DIR}/ssl.repo.client.keystore ${SOLR_KEYSTORES_DIR}/ssl-repo-client.keystore
-    mv ${ZEPPELIN_KEYSTORES_DIR}/ssl.repo.client.keystore ${ZEPPELIN_KEYSTORES_DIR}/ssl-repo-client.keystore
-    mv ${ZEPPELIN_KEYSTORES_DIR}/ssl.repo.client.truststore ${ZEPPELIN_KEYSTORES_DIR}/ssl-repo-client.truststore
+    if [ "$ALFRESCO_VERSION" = "enterprise" ]; then
+      mv ${ZEPPELIN_KEYSTORES_DIR}/ssl.repo.client.keystore ${ZEPPELIN_KEYSTORES_DIR}/ssl-repo-client.keystore
+      mv ${ZEPPELIN_KEYSTORES_DIR}/ssl.repo.client.truststore ${ZEPPELIN_KEYSTORES_DIR}/ssl-repo-client.truststore
+    fi
   fi
 
 }

@@ -90,6 +90,17 @@ keyUsage = critical, digitalSignature, keyEncipherment
 extendedKeyUsage = serverAuth, clientAuth
 subjectAltName = @alt_names
 
+[ server_cert ]
+# Extensions for server certificates (`man x509v3_config`).
+basicConstraints = CA:FALSE
+nsCertType = server
+nsComment = "OpenSSL Generated Server Certificate"
+subjectKeyIdentifier = hash
+authorityKeyIdentifier = keyid,issuer:always
+keyUsage = critical, digitalSignature, keyEncipherment
+extendedKeyUsage = serverAuth
+subjectAltName = @alt_names
+
 [ client_cert ]
 basicConstraints = CA:FALSE
 nsCertType = client
@@ -104,4 +115,4 @@ extendedKeyUsage = clientAuth
 authorityKeyIdentifier=keyid:always
 
 [alt_names]
-DNS.1   = localhost
+DNS.1 = localhost

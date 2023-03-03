@@ -38,6 +38,8 @@ function settingsBasedOnRole {
   if [ "$ROLE" == "client" ]; then
     EXTENSION=client_cert
     FILE_SUFFIX=_client
+    echo "Warning: For client role, servername parameter will be unused even if provided."
+    SERVICE_SERVER_NAME=
   elif [ "$ROLE" == "server" ]; then
     EXTENSION=server_cert
     FILE_SUFFIX=_server
@@ -54,6 +56,10 @@ function settingsBasedOnRole {
 
 # Generates service keystore, trustore and certificate required for Alfresco SSL configuration
 function generate {
+  echo
+  echo "---Script Execution---"
+  echo
+
   SERVICE_KEYSTORES_DIR=$KEYSTORES_DIR/$SERVICE_NAME
   settingsBasedOnRole
 
@@ -61,11 +67,13 @@ function generate {
     mkdir -p $SERVICE_KEYSTORES_DIR
   fi
 
-  # Server Certificate for Service (issued by just generated CA)
-  if [[ "$OSTYPE" == "darwin"* ]]; then
-    sed -i '' "s/DNS.1.*/DNS.1 = $SERVICE_SERVER_NAME/" openssl.cnf;
-  else
-    sed -i "s/DNS.1.*/DNS.1 = $SERVICE_SERVER_NAME/" openssl.cnf;
+  #Subject Alternative Name provided through config file substitution
+  if [ ! -z "$SERVICE_SERVER_NAME" ]; then
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+      sed -i '' "s/DNS.1.*/DNS.1 = $SERVICE_SERVER_NAME/" openssl.cnf;
+    else
+      sed -i "s/DNS.1.*/DNS.1 = $SERVICE_SERVER_NAME/" openssl.cnf;
+    fi
   fi
 
   #Generate key and CSR

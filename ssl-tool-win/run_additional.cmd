@@ -137,7 +137,7 @@ ECHO
 ECHO "---Script Execution---"
 ECHO
 
-SET SERVICE_KEYSTORES_DIR=%KEYSTORES_DIR%/%SERVICE_NAME%
+SET SERVICE_KEYSTORES_DIR=%KEYSTORES_DIR%\%SERVICE_NAME%
 
 REM Create folders for truststores, keystores and certificates
 IF NOT EXIST "%SERVICE_KEYSTORES_DIR%" (
@@ -156,7 +156,7 @@ openssl ca -config openssl.cnf -extensions %EXTENSION% -passin pass:%KEYSTORE_PA
 -in %CERTIFICATES_DIR%\%SERVICE_NAME%%FILE_SUFFIX%.csr -out %CERTIFICATES_DIR%\%SERVICE_NAME%%FILE_SUFFIX%.cer
 
 REM Export keystore with key and certificate
-openssl pkcs12 -export -out %CERTIFICATES_DIR%/%SERVICE_NAME%%FILE_SUFFIX%.p12 -inkey %CERTIFICATES_DIR%\%SERVICE_NAME%%FILE_SUFFIX%.key ^
+openssl pkcs12 -export -out %CERTIFICATES_DIR%\%SERVICE_NAME%%FILE_SUFFIX%.p12 -inkey %CERTIFICATES_DIR%\%SERVICE_NAME%%FILE_SUFFIX%.key ^
 -in %CERTIFICATES_DIR%\%SERVICE_NAME%%FILE_SUFFIX%.cer -password pass:%KEYSTORE_PASS% -certfile ca\certs\ca.cert.pem
 
 REM Convert keystore to desired format, set alias
@@ -182,8 +182,8 @@ keytool -import -trustcacerts -noprompt -alias alfresco.ca -file ca\certs\ca.cer
 -keystore %SERVICE_KEYSTORES_DIR%\%SERVICE_NAME%%FILE_SUFFIX%.truststore -storetype %TRUSTSTORE_TYPE% -storepass %TRUSTSTORE_PASS%
 
 REM Create TrustStore password file
-ECHO aliases=alfresco.ca>> %SERVICE_KEYSTORES_DIR%/truststore-passwords.properties
-ECHO alfresco.ca.password=%TRUSTSTORE_PASS%>> %SERVICE_KEYSTORES_DIR%/truststore-passwords.properties
+ECHO aliases=alfresco.ca>> %SERVICE_KEYSTORES_DIR%\truststore-passwords.properties
+ECHO alfresco.ca.password=%TRUSTSTORE_PASS%>> %SERVICE_KEYSTORES_DIR%\truststore-passwords.properties
 
 REM Removing files for current Alfresco Format
 IF "%ALFRESCO_FORMAT%" == "current" (

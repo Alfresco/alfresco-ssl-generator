@@ -4,14 +4,19 @@ set -o errexit
 set -o pipefail
 set -o nounset
 
+# This script is a follow up to run.sh script (it generates the CA that will be required here).
+# It is responsible for sets of keystores and truststores for additional services to be used in mTLS approach.
+
+# PARAMETERS
+
 # Using "current" format by default (only available from ACS 7.0+)
 ALFRESCO_FORMAT=current
 
 # Service name, to be used as folder name where results are generated to
 SERVICE_NAME=service
-#Alias of private key
+# Alias of private key
 ALIAS=$SERVICE_NAME
-#Role
+# Role to be fulfilled by the keystore key (both/client/server)
 ROLE="both"
 # Distinguished name of the CA
 SERVICE_CERT_DNAME="/C=GB/ST=UK/L=Maidenhead/O=Alfresco Software Ltd./OU=Unknown/CN=Custom Service"
@@ -109,13 +114,12 @@ function generate {
   echo "alfresco.ca.password=$TRUSTSTORE_PASS" >> ${SERVICE_KEYSTORES_DIR}/truststore-passwords.properties
 
   #
-  # Renaming files for current Alfresco Format
+  # Removing files for current Alfresco Format
   #
   if [ "$ALFRESCO_FORMAT" = "current" ]; then
     rm ${SERVICE_KEYSTORES_DIR}/truststore-passwords.properties
     rm ${SERVICE_KEYSTORES_DIR}/keystore-passwords.properties
   fi
-
 }
 
 # EXECUTION

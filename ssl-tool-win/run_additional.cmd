@@ -108,7 +108,7 @@ IF NOT "%1"=="" (
     SHIFT
     GOTO loop
   )
-  ECHO "An invalid parameter was received: %1"
+  ECHO An invalid parameter was received: %1
   EXIT /b
 )
 
@@ -116,7 +116,7 @@ REM Set settings based on role
 IF "%ROLE%" == "client" (
   SET EXTENSION=client_cert
   SET FILE_SUFFIX=_client
-  ECHO "Warning: For client role, servername parameter will be unused even if provided."
+  ECHO Warning: For client role, servername parameter will be unused even if provided.
   SET SERVICE_SERVER_NAME=
 ) ELSE IF "%ROLE%" == "server" (
   SET EXTENSION=server_cert
@@ -125,8 +125,8 @@ IF "%ROLE%" == "client" (
    SET EXTENSION=clientServer_cert
    SET FILE_SUFFIX=
 ) ELSE (
-  ECHO "Warning: Unsupported role provided, using 'both' as value"
-  SET ROLE="both"
+  ECHO Warning: Unsupported role provided, using 'both' as value
+  SET ROLE=both
   SET EXTENSION=clientServer_cert
   SET FILE_SUFFIX=
 )
@@ -134,7 +134,7 @@ IF "%ROLE%" == "client" (
 REM Generates service keystore, trustore and certificate required for Alfresco SSL configuration
 
 ECHO
-ECHO "---Script Execution---"
+ECHO ---Script Execution---
 ECHO
 
 SET SERVICE_KEYSTORES_DIR=%KEYSTORES_DIR%\%SERVICE_NAME%

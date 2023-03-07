@@ -108,7 +108,21 @@ IF NOT "%1"=="" (
     SHIFT
     GOTO loop
   )
+
   ECHO An invalid parameter was received: %1
+  ECHO Allowed parameters:
+  ECHO   -servicename
+  ECHO   -alias
+  ECHO   -role
+  ECHO   -keysize
+  ECHO   -keystoretype
+  ECHO   -keystorepass
+  ECHO   -truststoretype
+  ECHO   -truststorepass
+  ECHO   -certdname
+  ECHO   -servername
+  ECHO   -alfrescoformat
+
   EXIT /b
 )
 

@@ -7,6 +7,8 @@ set -o nounset
 # This script is a follow up to run.sh script (it generates the CA that will be required here).
 # It is responsible for sets of keystores and truststores for additional services to be used in mTLS approach.
 
+PASSWORD_PLACEHOLDER="<password>"
+
 # PARAMETERS
 
 # Using "current" format by default (only available from ACS 7.0+)
@@ -26,19 +28,81 @@ SERVICE_SERVER_NAME=localhost
 KEYSTORES_DIR=keystores
 CERTIFICATES_DIR=certificates
 
+# Root CA Password
+ROOT_CA_PASS=
 # RSA key length (1024, 2048, 4096)
 KEY_SIZE=2048
 # Keystore format (PKCS12, JKS, JCEKS)
 KEYSTORE_TYPE=JCEKS
 # Default password for every keystore and private key
-KEYSTORE_PASS=keystore
+KEYSTORE_PASS=$PASSWORD_PLACEHOLDER
 
 # Truststore format (JKS, JCEKS)
 TRUSTSTORE_TYPE=JCEKS
 # Default password for every truststore
-TRUSTSTORE_PASS=truststore
+TRUSTSTORE_PASS=$PASSWORD_PLACEHOLDER
 
-# SCRIPT
+# Password reading functions
+function verifyPasswordConditions {
+  CHECK_FAILED=false
+
+  PASSWORD_LENGTH=${#PASSWORD}
+  if [ $PASSWORD_LENGTH -lt 6 ] || [ $PASSWORD_LENGTH -gt 1023 ]
+  then
+    printf "\nPassword must have at least 6 characters and no more than 1023\n"
+    CHECK_FAILED=true
+  fi
+}
+
+function readPassword {
+  read -s -r -p "Please enter password for $1 (leading and trailing spaces will be removed): " PASSWORD
+
+  verifyPasswordConditions
+  if $CHECK_FAILED; then
+    PASSWORD=$PASSWORD_PLACEHOLDER
+    return
+  fi
+
+  read -s -r -p $'\nPlease repeat pass phrase : ' PASSWORD_CHECK
+
+  if [ "$PASSWORD" != "$PASSWORD_CHECK" ]
+  then
+    echo
+    echo "Password verification failed"
+    PASSWORD=$PASSWORD_PLACEHOLDER
+    return
+  fi
+}
+
+function askForPasswordIfNeeded {
+  if [ "$PASSWORD" != "$PASSWORD_PLACEHOLDER" ]; then
+    verifyPasswordConditions
+    if $CHECK_FAILED; then
+      exit 1
+    fi
+  fi
+
+  while [ "$PASSWORD" == "$PASSWORD_PLACEHOLDER" ]
+  do
+    readPassword "$1"
+  done
+
+  echo
+}
+
+function readKeystorePassword {
+  PASSWORD=$KEYSTORE_PASS
+  askForPasswordIfNeeded "[service name] $SERVICE_NAME, [role] $ROLE, keystore"
+  KEYSTORE_PASS=$PASSWORD
+}
+
+function readTruststorePassword {
+  PASSWORD=$TRUSTSTORE_PASS
+  askForPasswordIfNeeded "[service name] $SERVICE_NAME, [role] $ROLE, truststore"
+  TRUSTSTORE_PASS=$PASSWORD
+}
+
+# Set basic settings depending on role
 function settingsBasedOnRole {
   if [ "$ROLE" == "client" ]; then
     EXTENSION=client_cert
@@ -61,19 +125,24 @@ function settingsBasedOnRole {
 
 # Generates service keystore, trustore and certificate required for Alfresco SSL configuration
 function generate {
-  echo
-  echo "---Script Execution---"
-  echo
+  printf "\n---Run Additional Script Execution---\n"
 
-  SERVICE_KEYSTORES_DIR=$KEYSTORES_DIR/$SERVICE_NAME
+  if [ -z "$ROOT_CA_PASS" ]; then
+    echo "Root CA password [parameter: rootcapass] is mandatory"
+    exit 1
+  fi
+
+  readKeystorePassword
+  readTruststorePassword
   settingsBasedOnRole
 
+  SERVICE_KEYSTORES_DIR=$KEYSTORES_DIR/$SERVICE_NAME
   if [ ! -d "$SERVICE_KEYSTORES_DIR" ]; then
     mkdir -p $SERVICE_KEYSTORES_DIR
   fi
 
   #Subject Alternative Name provided through config file substitution
-  if [ ! -z "$SERVICE_SERVER_NAME" ]; then
+  if [ -n "$SERVICE_SERVER_NAME" ]; then
     if [[ "$OSTYPE" == "darwin"* ]]; then
       sed -i '' "s/DNS.1.*/DNS.1 = $SERVICE_SERVER_NAME/" openssl.cnf;
     else
@@ -84,7 +153,7 @@ function generate {
   #Generate key and CSR
   openssl req -newkey rsa:$KEY_SIZE -nodes -out $CERTIFICATES_DIR/$SERVICE_NAME$FILE_SUFFIX.csr -keyout $CERTIFICATES_DIR/$SERVICE_NAME$FILE_SUFFIX.key -subj "$SERVICE_CERT_DNAME"
   #Sign CSR with CA
-  openssl ca -config openssl.cnf -extensions $EXTENSION -passin pass:$KEYSTORE_PASS -batch -notext \
+  openssl ca -config openssl.cnf -extensions $EXTENSION -passin pass:$ROOT_CA_PASS -batch -notext \
   -in $CERTIFICATES_DIR/$SERVICE_NAME$FILE_SUFFIX.csr -out $CERTIFICATES_DIR/$SERVICE_NAME$FILE_SUFFIX.cer
   #Export keystore with key and certificate
   openssl pkcs12 -export -out $CERTIFICATES_DIR/$SERVICE_NAME$FILE_SUFFIX.p12 -inkey $CERTIFICATES_DIR/$SERVICE_NAME$FILE_SUFFIX.key \
@@ -140,6 +209,11 @@ do
         # Role: server, client, both (default)
         -role)
             ROLE=$2
+            shift
+        ;;
+        # Root CA password
+        -rootcapass)
+            ROOT_CA_PASS=$2
             shift
         ;;
         # 1024, 2048, 4096, ...

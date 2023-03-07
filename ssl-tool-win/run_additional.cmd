@@ -3,6 +3,8 @@
 REM This script is a follow up to run.sh script (it generates the CA that will be required here).
 REM It is responsible for sets of keystores and truststores for additional services to be used in mTLS approach.
 
+SET PASSWORD_PLACEHOLDER="<password>"
+
 REM ----------
 REM PARAMETERS
 REM ----------
@@ -16,28 +18,27 @@ REM Alias of private key
 SET ALIAS=$SERVICE_NAME
 REM Role to be fulfilled by the keystore key (both/client/server)
 SET ROLE=both
-
 REM Distinguished name of the CA
 SET SERVICE_CERT_DNAME=/C=GB/ST=UK/L=Maidenhead/O=Alfresco Software Ltd./OU=Unknown/CN=Custom Service
-
 REM Service server name, to be used as Alternative Name in the certificates
 SET SERVICE_SERVER_NAME=localhost
 
+SET KEYSTORES_DIR=keystores
+SET CERTIFICATES_DIR=certificates
+
+REM Root CA Password
+SET ROOT_CA_PASS=
 REM RSA key length (1024, 2048, 4096)
 SET KEY_SIZE=2048
-
 REM Keystore format (PKCS12, JKS, JCEKS)
 SET KEYSTORE_TYPE=JCEKS
 REM Default password for every keystore and private key
-SET KEYSTORE_PASS=keystore
+SET KEYSTORE_PASS=%PASSWORD_PLACEHOLDER%
 
 REM Truststore format (JKS, JCEKS)
 SET TRUSTSTORE_TYPE=JCEKS
 REM Default password for every truststore
-SET TRUSTSTORE_PASS=truststore
-
-SET KEYSTORES_DIR=keystores
-SET CERTIFICATES_DIR=certificates
+SET TRUSTSTORE_PASS=%PASSWORD_PLACEHOLDER%
 
 REM Parse params from command line
 :loop
@@ -57,6 +58,12 @@ IF NOT "%1"=="" (
   IF "%1"=="-role" (
     SHIFT
     SET ROLE=%2
+    SHIFT
+    GOTO loop
+  )
+  IF "%1"=="-rootcapass" (
+    SHIFT
+    SET ROOT_CA_PASS=%2
     SHIFT
     GOTO loop
   )
@@ -114,6 +121,7 @@ IF NOT "%1"=="" (
   ECHO   -servicename
   ECHO   -alias
   ECHO   -role
+  ECHO   -rootcapass
   ECHO   -keysize
   ECHO   -keystoretype
   ECHO   -keystorepass
@@ -125,6 +133,16 @@ IF NOT "%1"=="" (
 
   EXIT /b
 )
+
+ECHO ---Run Additional Script Execution---
+
+IF "%ROOT_CA_PASS%" == "" (
+    ECHO "Root CA password [parameter: rootcapass] is mandatory"
+    EXIT /b 1
+)
+
+CALL :readKeystorePassword
+CALL :readTruststorePassword
 
 REM Set settings based on role
 IF "%ROLE%" == "client" (
@@ -147,9 +165,9 @@ IF "%ROLE%" == "client" (
 
 REM Generates service keystore, trustore and certificate required for Alfresco SSL configuration
 
-ECHO
-ECHO ---Script Execution---
-ECHO
+echo
+echo ---Run Additional Script Execution---
+echo
 
 SET SERVICE_KEYSTORES_DIR=%KEYSTORES_DIR%\%SERVICE_NAME%
 
@@ -166,7 +184,7 @@ REM Generate key and CSR
 openssl req -newkey rsa:%KEY_SIZE% -nodes -out %CERTIFICATES_DIR%\%SERVICE_NAME%%FILE_SUFFIX%.csr -keyout %CERTIFICATES_DIR%\%SERVICE_NAME%%FILE_SUFFIX%.key -subj "%SERVICE_CERT_DNAME%"
 
 REM Sign CSR with CA
-openssl ca -config openssl.cnf -extensions %EXTENSION% -passin pass:%KEYSTORE_PASS% -batch -notext ^
+openssl ca -config openssl.cnf -extensions %EXTENSION% -passin pass:%ROOT_CA_PASS% -batch -notext ^
 -in %CERTIFICATES_DIR%\%SERVICE_NAME%%FILE_SUFFIX%.csr -out %CERTIFICATES_DIR%\%SERVICE_NAME%%FILE_SUFFIX%.cer
 
 REM Export keystore with key and certificate
@@ -204,3 +222,71 @@ IF "%ALFRESCO_FORMAT%" == "current" (
   del %SERVICE_KEYSTORES_DIR%\keystore-passwords.properties
   del %SERVICE_KEYSTORES_DIR%\truststore-passwords.properties
 )
+
+REM End of processing
+EXIT /B 0
+
+REM Password reading functions
+:verifyPasswordConditions
+  SET CHECK_FAILED=false
+
+  SET PASSWORD_LENGTH=%PASSWORD:~0,1%
+  IF %PASSWORD_LENGTH% LSS 6 (
+    ECHO Password must have at least 6 characters and no more than 1023
+    SET CHECK_FAILED=true
+  ) ELSE IF %PASSWORD_LENGTH% GTR 1023 (
+    ECHO Password must have at least 6 characters and no more than 1023
+    SET CHECK_FAILED=true
+  )
+EXIT /B 0
+
+:readPassword
+  SET /p "PASSWORD=Please enter password for %1 (leading and trailing spaces will be removed): "
+
+  CALL :verifyPasswordConditions
+  IF $CHECK_FAILED (
+    SET PASSWORD=%PASSWORD_PLACEHOLDER%
+    EXIT /B 0
+  )
+
+  SET /p "PASSWORD_CHECK=Please repeat pass phrase : "
+  IF NOT "%PASSWORD%" == "%PASSWORD_CHECK%" (
+    ECHO
+    ECHO Password verification failed
+    SET PASSWORD=%PASSWORD_PLACEHOLDER%
+    EXIT /B 0
+  )
+EXIT /B 0
+
+:askForPasswordIfNeeded
+  IF NOT "%PASSWORD%" == "%PASSWORD_PLACEHOLDER%" CALL :verifyPasswordConditions
+  IF %CHECK_FAILED% == true (
+    GOTO :eof
+  )
+
+  CALL :askForPasswordIfNeededLoop %1
+  ECHO
+EXIT /B 0
+
+:askForPasswordIfNeededLoop
+IF "%PASSWORD%" == "%PASSWORD_PLACEHOLDER%" (
+  CALL :readPassword %1
+) ELSE (
+  ECHO
+  EXIT /B 0
+)
+GOTO :askForPasswordIfNeededLoop
+
+:readKeystorePassword
+SET PASSWORD=%KEYSTORE_PASS%
+CALL :askForPasswordIfNeeded "[service name] %SERVICE_NAME%, [role] %ROLE%, keystore"
+
+
+SET KEYSTORE_PASS=%PASSWORD%
+EXIT /B 0
+
+:readTruststorePassword
+SET PASSWORD=%TRUSTSTORE_PASS%
+CALL :askForPasswordIfNeeded "[service name] %SERVICE_NAME%, [role] %ROLE%, truststore"
+SET TRUSTSTORE_PASS=%PASSWORD%
+EXIT /B 0

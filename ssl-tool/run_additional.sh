@@ -262,6 +262,7 @@ do
             echo "  -servicename"
             echo "  -alias"
             echo "  -role"
+            echo "  -rootcapass"
             echo "  -keysize"
             echo "  -keystoretype"
             echo "  -keystorepass"

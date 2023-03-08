@@ -7,7 +7,7 @@ set -o nounset
 # This script is a follow up to run.sh script (it generates the CA that will be required here).
 # It is responsible for sets of keystores and truststores for additional services to be used in mTLS approach.
 
-PASSWORD_PLACEHOLDER="<password>"
+PASSWORD_PLACEHOLDER="password"
 
 # PARAMETERS
 
@@ -125,7 +125,7 @@ function settingsBasedOnRole {
 
 # Generates service keystore, trustore and certificate required for Alfresco SSL configuration
 function generate {
-  printf "\n---Run Additional Script Execution---\n"
+  echo "---Run Additional Script Execution for $SERVICE_NAME---"
 
   if [ -z "$ROOT_CA_PASS" ]; then
     echo "Root CA password [parameter: rootcapass] is mandatory"

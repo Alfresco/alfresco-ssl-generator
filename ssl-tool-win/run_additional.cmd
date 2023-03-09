@@ -187,9 +187,7 @@ IF NOT EXIST "%SERVICE_KEYSTORES_DIR%" (
   mkdir %SERVICE_KEYSTORES_DIR%
 )
 
-REM Subject Alternative Name provided through config file substitution
-powershell -Command "(gc -Encoding utf8 openssl.cnf) -replace '(^DNS.*\.).*', 'DNS.1=%SERVICE_SERVER_NAME%' | Out-File -Encoding utf8 openssl.cnf"
-powershell -Command "(gc -Encoding utf8 openssl.cnf) | Foreach-Object {$_ -replace '\xEF\xBB\xBF', ''} | Set-Content openssl.cnf"
+CALL :subjectAlternativeNames
 
 REM Generate key and CSR
 openssl req -newkey rsa:%KEY_SIZE% -nodes -out %CERTIFICATES_DIR%\%SERVICE_NAME%%FILE_SUFFIX%.csr -keyout %CERTIFICATES_DIR%\%SERVICE_NAME%%FILE_SUFFIX%.key -subj "%SERVICE_CERT_DNAME%"
@@ -293,6 +291,28 @@ SET PASSWORD=%TRUSTSTORE_PASS%
 CALL :askForPasswordIfNeeded truststore "[service name] %SERVICE_NAME%, [role] %ROLE%, truststore"
 IF ERRORLEVEL 1 ( EXIT /b 1 )
 SET TRUSTSTORE_PASS=!PASSWORD!
+GOTO :eof
+
+REM Subject Alternative Name provided through config file substitution
+:subjectAlternativeNames
+IF DEFINED SERVICE_SERVER_NAME (
+  REM Clear existing DNS.X lines in openssl.cnf file
+  powershell -Command "(gc -Encoding utf8 openssl.cnf) | Foreach-Object {$_ -replace '^DNS\..*', ''} | Set-Content openssl.cnf"
+
+  REM Split given server names by "," separator
+  REM Create a string that would place every hostname as a separate DNS.{counter} = {hostname} line
+  SET COUNTER=0
+
+  FOR %%HOSTNAME IN (%SERVICE_SERVER_NAME%) do (
+    SET /a COUNTER=COUNTER+1
+    SET "SED_HOSTNAMES=!SED_HOSTNAMES!`nDNS.!COUNTER! = %%HOSTNAME"
+  )
+
+  REM Place that string in openssl.cnf file under [alt_names]
+  powershell -Command "(gc -Encoding utf8 openssl.cnf) | Foreach-Object {$_ -replace '\[alt_names\]', '[alt_names]`n!SED_HOSTNAMES!'} | Set-Content openssl.cnf"
+
+  powershell -Command "(gc -Encoding utf8 openssl.cnf) | Foreach-Object {$_ -replace '\xEF\xBB\xBF', ''} | Set-Content openssl.cnf"
+)
 GOTO :eof
 
 :strLen

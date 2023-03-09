@@ -303,14 +303,14 @@ IF DEFINED SERVICE_SERVER_NAME (
   REM Create a string that would place every hostname as a separate DNS.{counter} = {hostname} line
   SET COUNTER=0
 
-  FOR %%HOSTNAME IN (%SERVICE_SERVER_NAME%) do (
+  FOR %%a IN (%SERVICE_SERVER_NAME%) DO (
     SET /a COUNTER=COUNTER+1
-    SET "SED_HOSTNAMES=!SED_HOSTNAMES!`nDNS.!COUNTER! = %%HOSTNAME"
+    SET "SED_HOSTNAMES=!SED_HOSTNAMES!`nDNS.!COUNTER! = %%a"
   )
 
   REM Place that string in openssl.cnf file under [alt_names]
-  powershell -Command "(gc -Encoding utf8 openssl.cnf) | Foreach-Object {$_ -replace '\[alt_names\]', '[alt_names]`n!SED_HOSTNAMES!'} | Set-Content openssl.cnf"
-
+  powershell -Command "(gc -Encoding utf8 openssl.cnf) -replace '\[alt_names\]', \"[alt_names]!SED_HOSTNAMES!\" | Out-File -Encoding utf8 openssl.cnf"
+  REM Remove BOM
   powershell -Command "(gc -Encoding utf8 openssl.cnf) | Foreach-Object {$_ -replace '\xEF\xBB\xBF', ''} | Set-Content openssl.cnf"
 )
 GOTO :eof

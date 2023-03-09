@@ -281,7 +281,8 @@ ECHO 1000 > ca\serial
 
 openssl genrsa -aes256 -passout pass:%KEYSTORE_PASS% -out ca\private\ca.key.pem %KEY_SIZE%
 
-powershell -Command "(gc -Encoding utf8 openssl.cnf) -replace '(^DNS.*\.).*', 'DNS.1=%CA_SERVER_NAME%' | Out-File -Encoding utf8 openssl.cnf"
+powershell -Command "(gc -Encoding utf8 openssl.cnf) | Foreach-Object {$_ -replace '^DNS\..*', ''} | Set-Content openssl.cnf"
+powershell -Command "(gc -Encoding utf8 openssl.cnf) -replace '\[alt_names\]', \"[alt_names]`nDNS.1=%CA_SERVER_NAME%\" | Out-File -Encoding utf8 openssl.cnf"
 powershell -Command "(gc -Encoding utf8 openssl.cnf) | Foreach-Object {$_ -replace '\xEF\xBB\xBF', ''} | Set-Content openssl.cnf"
 openssl req -config openssl.cnf ^
       -key ca\private\ca.key.pem ^

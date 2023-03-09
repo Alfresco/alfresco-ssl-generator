@@ -101,6 +101,24 @@ CLIENT_KEYSTORES_DIR=keystores/client
 CERTIFICATES_DIR=certificates
 
 # SCRIPT
+#Set subject alternative name
+function subjectAlternativeName {
+  HOSTNAME="\\
+DNS.1 = $1"
+
+  #Clear existing DNS.X lines in openssl.cnf file
+  #Append a line with DNS.1 = {hostname}
+  if [[ "$OSTYPE" == "darwin"* ]]; then
+    sed -i '' '/^DNS./d' openssl.cnf
+    sed -i '' "/\[alt_names\]/ {a${HOSTNAME}
+}" openssl.cnf
+  else
+    sed -i '/^DNS./d' openssl.cnf
+    sed -i "/\[alt_names\]/ {a${HOSTNAME}
+}" openssl.cnf
+  fi
+}
+
 # Generates every keystore, trustore and certificate required for Alfresco SSL configuration
 function generate {
 
@@ -185,11 +203,7 @@ function generate {
   openssl genrsa -aes256 -passout pass:$KEYSTORE_PASS -out ca/private/ca.key.pem $KEY_SIZE
   chmod 400 ca/private/ca.key.pem
 
-  if [[ "$OSTYPE" == "darwin"* ]]; then
-    sed -i '' "s/DNS.1.*/DNS.1 = $CA_SERVER_NAME/" openssl.cnf;
-  else
-    sed -i "s/DNS.1.*/DNS.1 = $CA_SERVER_NAME/" openssl.cnf;
-  fi
+  subjectAlternativeName $CA_SERVER_NAME
 
   openssl req -config openssl.cnf \
         -key ca/private/ca.key.pem \
@@ -200,11 +214,8 @@ function generate {
   chmod 444 ca/certs/ca.cert.pem
 
   # Generate Server Certificate for Alfresco (issued by just generated CA)
-  if [[ "$OSTYPE" == "darwin"* ]]; then
-    sed -i '' "s/DNS.1.*/DNS.1 = $ALFRESCO_SERVER_NAME/" openssl.cnf;
-  else
-    sed -i "s/DNS.1.*/DNS.1 = $ALFRESCO_SERVER_NAME/" openssl.cnf;
-  fi
+  subjectAlternativeName $ALFRESCO_SERVER_NAME
+
   openssl req -newkey rsa:$KEY_SIZE -nodes -out $CERTIFICATES_DIR/repository.csr -keyout $CERTIFICATES_DIR/repository.key -subj "$REPO_CERT_DNAME"
 
   openssl ca -config openssl.cnf -extensions clientServer_cert -passin pass:$KEYSTORE_PASS -batch -notext \
@@ -214,11 +225,8 @@ function generate {
   -in $CERTIFICATES_DIR/repository.cer -password pass:$KEYSTORE_PASS -certfile ca/certs/ca.cert.pem
 
   # Server Certificate for SOLR (issued by just generated CA)
-  if [[ "$OSTYPE" == "darwin"* ]]; then
-    sed -i '' "s/DNS.1.*/DNS.1 = $SOLR_SERVER_NAME/" openssl.cnf;
-  else
-    sed -i "s/DNS.1.*/DNS.1 = $SOLR_SERVER_NAME/" openssl.cnf;
-  fi
+  subjectAlternativeName $SOLR_SERVER_NAME
+
   openssl req -newkey rsa:$KEY_SIZE -nodes -out $CERTIFICATES_DIR/solr.csr -keyout $CERTIFICATES_DIR/solr.key -subj "$SOLR_CLIENT_CERT_DNAME"
 
   openssl ca -config openssl.cnf -extensions clientServer_cert -passin pass:$KEYSTORE_PASS -batch -notext \

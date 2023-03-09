@@ -7,7 +7,7 @@ set -o nounset
 # This script is a follow up to run.sh script (it generates the CA that will be required here).
 # It is responsible for sets of keystores and truststores for additional services to be used in mTLS approach.
 
-PASSWORD_PLACEHOLDER="password"
+PASSWORD_PLACEHOLDER="<password>"
 
 # PARAMETERS
 
@@ -140,6 +140,10 @@ function generate {
   if [ ! -d "$SERVICE_KEYSTORES_DIR" ]; then
     mkdir -p $SERVICE_KEYSTORES_DIR
   fi
+
+  #Remove all DNS lines
+  #sed -i '' "/^DNS./ d" openssl.cnf;
+  #
 
   #Subject Alternative Name provided through config file substitution
   if [ -n "$SERVICE_SERVER_NAME" ]; then

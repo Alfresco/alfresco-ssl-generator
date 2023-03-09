@@ -11,7 +11,7 @@ setlocal EnableDelayedExpansion
 REM This script is a follow up to run.sh script (it generates the CA that will be required here).
 REM It is responsible for sets of keystores and truststores for additional services to be used in mTLS approach.
 
-SET PASSWORD_PLACEHOLDER=password
+SET PASSWORD_PLACEHOLDER="<password>"
 
 REM ----------
 REM PARAMETERS

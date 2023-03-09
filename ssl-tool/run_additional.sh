@@ -146,10 +146,10 @@ DNS.$COUNTER = $HOSTNAME"
 
     #Place that string in openssl.cnf file under [alt_names]
     if [[ "$OSTYPE" == "darwin"* ]]; then
-    sed -i '' "/\[alt_names\]/ {a${SED_HOSTNAMES}
+      sed -i '' "/\[alt_names\]/ {a${SED_HOSTNAMES}
 }" openssl.cnf
     else
-    sed -i "/\[alt_names\]/ {a${SED_HOSTNAMES}
+      sed -i "/\[alt_names\]/ {a${SED_HOSTNAMES}
 }" openssl.cnf
     fi
   fi

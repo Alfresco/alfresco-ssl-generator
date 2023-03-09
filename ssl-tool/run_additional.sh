@@ -123,6 +123,38 @@ function settingsBasedOnRole {
   fi
 }
 
+function subjectAlternativeNames {
+  #Subject Alternative Name provided through config file substitution
+  if [ -n "$SERVICE_SERVER_NAME" ]; then
+    #Clear existing DNS.X lines in openssl.cnf file
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+      sed -i '' '/^DNS./d' openssl.cnf
+    else
+      sed -i '/^DNS./d' openssl.cnf
+    fi
+
+    SED_HOSTNAMES=
+    COUNTER=0
+    #Split given server names by "," separator
+    #Create a string that would place every hostname as a separate DNS.{counter} = {hostname} line
+    IFS=',' read -ra HOSTNAMES <<< "$SERVICE_SERVER_NAME"
+    for HOSTNAME in "${HOSTNAMES[@]}"; do
+      COUNTER=$((COUNTER + 1))
+      SED_HOSTNAMES="$SED_HOSTNAMES\\
+DNS.$COUNTER = $HOSTNAME"
+    done
+
+    #Place that string in openssl.cnf file under [alt_names]
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+    sed -i '' "/\[alt_names\]/ {a${SED_HOSTNAMES}
+}" openssl.cnf
+    else
+    sed -i "/\[alt_names\]/ {a${SED_HOSTNAMES}
+}" openssl.cnf
+    fi
+  fi
+}
+
 # Generates service keystore, trustore and certificate required for Alfresco SSL configuration
 function generate {
   echo "---Run Additional Script Execution for $SERVICE_NAME---"
@@ -141,18 +173,7 @@ function generate {
     mkdir -p $SERVICE_KEYSTORES_DIR
   fi
 
-  #Remove all DNS lines
-  #sed -i '' "/^DNS./ d" openssl.cnf;
-  #
-
-  #Subject Alternative Name provided through config file substitution
-  if [ -n "$SERVICE_SERVER_NAME" ]; then
-    if [[ "$OSTYPE" == "darwin"* ]]; then
-      sed -i '' "s/DNS.1.*/DNS.1 = $SERVICE_SERVER_NAME/" openssl.cnf;
-    else
-      sed -i "s/DNS.1.*/DNS.1 = $SERVICE_SERVER_NAME/" openssl.cnf;
-    fi
-  fi
+  subjectAlternativeNames
 
   #Generate key and CSR
   openssl req -newkey rsa:$KEY_SIZE -nodes -out $CERTIFICATES_DIR/$SERVICE_NAME$FILE_SUFFIX.csr -keyout $CERTIFICATES_DIR/$SERVICE_NAME$FILE_SUFFIX.key -subj "$SERVICE_CERT_DNAME"

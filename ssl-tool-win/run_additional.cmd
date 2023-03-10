@@ -11,7 +11,7 @@ setlocal EnableDelayedExpansion
 REM This script is a follow up to run.sh script (it generates the CA that will be required here).
 REM It is responsible for sets of keystores and truststores for additional services to be used in mTLS approach.
 
-SET PASSWORD_PLACEHOLDER="<password>"
+SET PASSWORD_PLACEHOLDER=password_placeholder
 
 REM ----------
 REM PARAMETERS
@@ -295,9 +295,10 @@ GOTO :eof
 
 REM Subject Alternative Name provided through config file substitution
 :subjectAlternativeNames
+SET SED_HOSTNAMES=
 IF DEFINED SERVICE_SERVER_NAME (
   REM Clear existing DNS.X lines in openssl.cnf file
-  powershell -Command "(gc -Encoding utf8 openssl.cnf) | Foreach-Object {$_ -replace '^DNS\..*', ''} | Set-Content openssl.cnf"
+  powershell -Command "(gc -Encoding utf8 openssl.cnf) | Where-Object {$_ -notmatch '^DNS\.'} | Set-Content openssl.cnf"
 
   REM Split given server names by "," separator
   REM Create a string that would place every hostname as a separate DNS.{counter} = {hostname} line

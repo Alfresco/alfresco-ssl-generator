@@ -281,9 +281,7 @@ ECHO 1000 > ca\serial
 
 openssl genrsa -aes256 -passout pass:%KEYSTORE_PASS% -out ca\private\ca.key.pem %KEY_SIZE%
 
-powershell -Command "(gc -Encoding utf8 openssl.cnf) | Foreach-Object {$_ -replace '^DNS\..*', ''} | Set-Content openssl.cnf"
-powershell -Command "(gc -Encoding utf8 openssl.cnf) -replace '\[alt_names\]', \"[alt_names]`nDNS.1=%CA_SERVER_NAME%\" | Out-File -Encoding utf8 openssl.cnf"
-powershell -Command "(gc -Encoding utf8 openssl.cnf) | Foreach-Object {$_ -replace '\xEF\xBB\xBF', ''} | Set-Content openssl.cnf"
+CALL :subjectAlternativeNames %CA_SERVER_NAME%
 openssl req -config openssl.cnf ^
       -key ca\private\ca.key.pem ^
       -new -x509 -days 7300 -sha256 -extensions v3_ca ^
@@ -292,8 +290,7 @@ openssl req -config openssl.cnf ^
       -passin pass:%KEYSTORE_PASS%
 
 REM Generate Server Certificate for Alfresco (issued by just generated CA)
-powershell -Command "(gc -Encoding utf8 openssl.cnf) -replace '(^DNS.*\.).*', 'DNS.1=%ALFRESCO_SERVER_NAME%' | Out-File -Encoding utf8 openssl.cnf"
-powershell -Command "(gc -Encoding utf8 openssl.cnf) | Foreach-Object {$_ -replace '\xEF\xBB\xBF', ''} | Set-Content openssl.cnf"
+CALL :subjectAlternativeNames %ALFRESCO_SERVER_NAME%
 openssl req -newkey rsa:%KEY_SIZE% -nodes -out %CERTIFICATES_DIR%\repository.csr ^
 -keyout %CERTIFICATES_DIR%\repository.key -subj "%REPO_CERT_DNAME%"
 
@@ -304,8 +301,7 @@ openssl pkcs12 -export -out %CERTIFICATES_DIR%/repository.p12 -inkey %CERTIFICAT
 -in %CERTIFICATES_DIR%\repository.cer -password pass:%KEYSTORE_PASS% -certfile ca\certs\ca.cert.pem
 
 REM Server Certificate for SOLR (issued by just generated CA)
-powershell -Command "(gc -Encoding utf8 openssl.cnf) -replace '(^DNS.*\.).*', 'DNS.1=%SOLR_SERVER_NAME%' | Out-File -Encoding utf8 openssl.cnf"
-powershell -Command "(gc -Encoding utf8 openssl.cnf) | Foreach-Object {$_ -replace '\xEF\xBB\xBF', ''} | Set-Content openssl.cnf"
+CALL :subjectAlternativeNames %SOLR_SERVER_NAME%
 openssl req -newkey rsa:%KEY_SIZE% -nodes -out %CERTIFICATES_DIR%\solr.csr ^
 -keyout %CERTIFICATES_DIR%\solr.key -subj "%SOLR_CLIENT_CERT_DNAME%"
 
@@ -443,3 +439,28 @@ IF "%ALFRESCO_FORMAT%" == "current" (
     move %ZEPPELIN_KEYSTORES_DIR%\ssl.repo.client.keystore %ZEPPELIN_KEYSTORES_DIR%\ssl-repo-client.keystore
     move %ZEPPELIN_KEYSTORES_DIR%\ssl.repo.client.truststore %ZEPPELIN_KEYSTORES_DIR%\ssl-repo-client.truststore
 )
+
+EXIT /B 0
+
+REM Subject Alternative Name provided through config file substitution
+:subjectAlternativeNames
+SET SERVICE_SERVER_NAME=%1
+IF DEFINED SERVICE_SERVER_NAME (
+  REM Clear existing DNS.X lines in openssl.cnf file
+  powershell -Command "(gc -Encoding utf8 openssl.cnf) | Foreach-Object {$_ -replace '^DNS\..*', ''} | Set-Content openssl.cnf"
+
+  REM Split given server names by "," separator
+  REM Create a string that would place every hostname as a separate DNS.{counter} = {hostname} line
+  SET COUNTER=0
+
+  FOR %%a IN (%SERVICE_SERVER_NAME%) DO (
+    SET /a COUNTER=COUNTER+1
+    SET "SED_HOSTNAMES=!SED_HOSTNAMES!`nDNS.!COUNTER! = %%a"
+  )
+
+  REM Place that string in openssl.cnf file under [alt_names]
+  powershell -Command "(gc -Encoding utf8 openssl.cnf) -replace '\[alt_names\]', \"[alt_names]!SED_HOSTNAMES!\" | Out-File -Encoding utf8 openssl.cnf"
+  REM Remove BOM
+  powershell -Command "(gc -Encoding utf8 openssl.cnf) | Foreach-Object {$_ -replace '\xEF\xBB\xBF', ''} | Set-Content openssl.cnf"
+)
+GOTO :eof

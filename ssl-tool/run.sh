@@ -102,20 +102,35 @@ CERTIFICATES_DIR=certificates
 
 # SCRIPT
 #Set subject alternative name
-function subjectAlternativeName {
-  HOSTNAME="\\
-DNS.1 = $1"
+function subjectAlternativeNames {
+  #Subject Alternative Name provided through config file substitution
+  if [ -n "$1" ]; then
+    #Clear existing DNS.X lines in openssl.cnf file
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+      sed -i '' '/^DNS./d' openssl.cnf
+    else
+      sed -i '/^DNS./d' openssl.cnf
+    fi
 
-  #Clear existing DNS.X lines in openssl.cnf file
-  #Append a line with DNS.1 = {hostname}
-  if [[ "$OSTYPE" == "darwin"* ]]; then
-    sed -i '' '/^DNS./d' openssl.cnf
-    sed -i '' "/\[alt_names\]/ {a${HOSTNAME}
+    SED_HOSTNAMES=
+    COUNTER=0
+    #Split given server names by "," separator
+    #Create a string that would place every hostname as a separate DNS.{counter} = {hostname} line
+    IFS=',' read -ra HOSTNAMES <<< "$1"
+    for HOSTNAME in "${HOSTNAMES[@]}"; do
+      COUNTER=$((COUNTER + 1))
+      SED_HOSTNAMES="$SED_HOSTNAMES\\
+DNS.$COUNTER = $HOSTNAME"
+    done
+
+    #Place that string in openssl.cnf file under [alt_names]
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+      sed -i '' "/\[alt_names\]/ {a${SED_HOSTNAMES}
 }" openssl.cnf
-  else
-    sed -i '/^DNS./d' openssl.cnf
-    sed -i "/\[alt_names\]/ {a${HOSTNAME}
+    else
+      sed -i "/\[alt_names\]/ {a${SED_HOSTNAMES}
 }" openssl.cnf
+    fi
   fi
 }
 
@@ -203,7 +218,7 @@ function generate {
   openssl genrsa -aes256 -passout pass:$KEYSTORE_PASS -out ca/private/ca.key.pem $KEY_SIZE
   chmod 400 ca/private/ca.key.pem
 
-  subjectAlternativeName $CA_SERVER_NAME
+  subjectAlternativeNames $CA_SERVER_NAME
 
   openssl req -config openssl.cnf \
         -key ca/private/ca.key.pem \
@@ -214,7 +229,7 @@ function generate {
   chmod 444 ca/certs/ca.cert.pem
 
   # Generate Server Certificate for Alfresco (issued by just generated CA)
-  subjectAlternativeName $ALFRESCO_SERVER_NAME
+  subjectAlternativeNames $ALFRESCO_SERVER_NAME
 
   openssl req -newkey rsa:$KEY_SIZE -nodes -out $CERTIFICATES_DIR/repository.csr -keyout $CERTIFICATES_DIR/repository.key -subj "$REPO_CERT_DNAME"
 
@@ -225,7 +240,7 @@ function generate {
   -in $CERTIFICATES_DIR/repository.cer -password pass:$KEYSTORE_PASS -certfile ca/certs/ca.cert.pem
 
   # Server Certificate for SOLR (issued by just generated CA)
-  subjectAlternativeName $SOLR_SERVER_NAME
+  subjectAlternativeNames $SOLR_SERVER_NAME
 
   openssl req -newkey rsa:$KEY_SIZE -nodes -out $CERTIFICATES_DIR/solr.csr -keyout $CERTIFICATES_DIR/solr.key -subj "$SOLR_CLIENT_CERT_DNAME"
 

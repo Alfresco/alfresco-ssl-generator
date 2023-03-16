@@ -4,6 +4,9 @@ set -o errexit
 set -o pipefail
 set -o nounset
 
+SCRIPT_DIR="$(dirname "$(realpath "$0")")"
+source $SCRIPT_DIR/utils.sh
+
 # This script generates certificates for Repository and SOLR TLS/SSL Mutual Auth Communication:
 #
 # * CA Entity to issue all required certificates (alias alfresco.ca)
@@ -101,39 +104,6 @@ CLIENT_KEYSTORES_DIR=keystores/client
 CERTIFICATES_DIR=certificates
 
 # SCRIPT
-#Set subject alternative name
-function subjectAlternativeNames {
-  #Subject Alternative Name provided through config file substitution
-  if [ -n "$1" ]; then
-    #Clear existing DNS.X lines in openssl.cnf file
-    if [[ "$OSTYPE" == "darwin"* ]]; then
-      sed -i '' '/^DNS./d' openssl.cnf
-    else
-      sed -i '/^DNS./d' openssl.cnf
-    fi
-
-    SED_HOSTNAMES=
-    COUNTER=0
-    #Split given server names by "," separator
-    #Create a string that would place every hostname as a separate DNS.{counter} = {hostname} line
-    IFS=',' read -ra HOSTNAMES <<< "$1"
-    for HOSTNAME in "${HOSTNAMES[@]}"; do
-      COUNTER=$((COUNTER + 1))
-      SED_HOSTNAMES="$SED_HOSTNAMES\\
-DNS.$COUNTER = $HOSTNAME"
-    done
-
-    #Place that string in openssl.cnf file under [alt_names]
-    if [[ "$OSTYPE" == "darwin"* ]]; then
-      sed -i '' "/\[alt_names\]/ {a${SED_HOSTNAMES}
-}" openssl.cnf
-    else
-      sed -i "/\[alt_names\]/ {a${SED_HOSTNAMES}
-}" openssl.cnf
-    fi
-  fi
-}
-
 # Generates every keystore, trustore and certificate required for Alfresco SSL configuration
 function generate {
 
@@ -220,7 +190,7 @@ function generate {
 
   subjectAlternativeNames $CA_SERVER_NAME
 
-  openssl req -config openssl.cnf \
+  openssl req -config $SCRIPT_DIR/openssl.cnf \
         -key ca/private/ca.key.pem \
         -new -x509 -days 7300 -sha256 -extensions v3_ca \
         -out ca/certs/ca.cert.pem \
@@ -233,7 +203,7 @@ function generate {
 
   openssl req -newkey rsa:$KEY_SIZE -nodes -out $CERTIFICATES_DIR/repository.csr -keyout $CERTIFICATES_DIR/repository.key -subj "$REPO_CERT_DNAME"
 
-  openssl ca -config openssl.cnf -extensions clientServer_cert -passin pass:$KEYSTORE_PASS -batch -notext \
+  openssl ca -config $SCRIPT_DIR/openssl.cnf -extensions clientServer_cert -passin pass:$KEYSTORE_PASS -batch -notext \
   -in $CERTIFICATES_DIR/repository.csr -out $CERTIFICATES_DIR/repository.cer
 
   openssl pkcs12 -export -out $CERTIFICATES_DIR/repository.p12 -inkey $CERTIFICATES_DIR/repository.key \
@@ -244,7 +214,7 @@ function generate {
 
   openssl req -newkey rsa:$KEY_SIZE -nodes -out $CERTIFICATES_DIR/solr.csr -keyout $CERTIFICATES_DIR/solr.key -subj "$SOLR_CLIENT_CERT_DNAME"
 
-  openssl ca -config openssl.cnf -extensions clientServer_cert -passin pass:$KEYSTORE_PASS -batch -notext \
+  openssl ca -config $SCRIPT_DIR/openssl.cnf -extensions clientServer_cert -passin pass:$KEYSTORE_PASS -batch -notext \
   -in $CERTIFICATES_DIR/solr.csr -out $CERTIFICATES_DIR/solr.cer
 
   openssl pkcs12 -export -out $CERTIFICATES_DIR/solr.p12 -inkey $CERTIFICATES_DIR/solr.key \
@@ -254,7 +224,7 @@ function generate {
   openssl req -newkey rsa:$KEY_SIZE -nodes -out $CERTIFICATES_DIR/browser.csr -keyout $CERTIFICATES_DIR/browser.key \
   -subj "$BROWSER_CLIENT_CERT_DNAME"
 
-  openssl ca -config openssl.cnf -extensions client_cert -passin pass:$KEYSTORE_PASS -batch -notext \
+  openssl ca -config $SCRIPT_DIR/openssl.cnf -extensions client_cert -passin pass:$KEYSTORE_PASS -batch -notext \
   -in $CERTIFICATES_DIR/browser.csr -out $CERTIFICATES_DIR/browser.cer
 
   openssl pkcs12 -export -out $CERTIFICATES_DIR/browser.p12 -inkey $CERTIFICATES_DIR/browser.key \

@@ -4,29 +4,28 @@ set -o errexit
 set -o pipefail
 set -o nounset
 
-# This script is a follow up to run.sh script (it generates the CA that will be required here).
-# It is responsible for sets of keystores and truststores for additional services to be used in mTLS approach.
+SCRIPT_DIR="$(dirname "$(realpath "$0")")"
+source $SCRIPT_DIR/utils.sh
 
-PASSWORD_PLACEHOLDER="<password>"
+# This script is a follow up to run_ca.sh script.
+# It is responsible for sets of keystores and truststores for services to be used in mTLS approach.
 
 # PARAMETERS
 
 # Using "current" format by default (only available from ACS 7.0+)
 ALFRESCO_FORMAT=current
-
+# Folder name to place results of script in
+SUBFOLDER_NAME=
 # Service name, to be used as folder name where results are generated to
 SERVICE_NAME=service
 # Alias of private key
-ALIAS=$SERVICE_NAME
+ALIAS=
 # Role to be fulfilled by the keystore key (both/client/server)
 ROLE="both"
 # Distinguished name of the CA
 SERVICE_CERT_DNAME="/C=GB/ST=UK/L=Maidenhead/O=Alfresco Software Ltd./OU=Unknown/CN=Custom Service"
 # Service server name, to be used as Alternative Name in the certificates
 SERVICE_SERVER_NAME=localhost
-
-KEYSTORES_DIR=keystores
-CERTIFICATES_DIR=certificates
 
 # Root CA Password
 ROOT_CA_PASS=
@@ -41,54 +40,6 @@ KEYSTORE_PASS=$PASSWORD_PLACEHOLDER
 TRUSTSTORE_TYPE=JCEKS
 # Default password for every truststore
 TRUSTSTORE_PASS=$PASSWORD_PLACEHOLDER
-
-# Password reading functions
-function verifyPasswordConditions {
-  CHECK_FAILED=false
-
-  PASSWORD_LENGTH=${#PASSWORD}
-  if [ $PASSWORD_LENGTH -lt 6 ] || [ $PASSWORD_LENGTH -gt 1023 ]
-  then
-    printf "\nPassword must have at least 6 characters and no more than 1023\n"
-    CHECK_FAILED=true
-  fi
-}
-
-function readPassword {
-  read -s -r -p "Please enter password for $1 (leading and trailing spaces will be removed): " PASSWORD
-
-  verifyPasswordConditions
-  if $CHECK_FAILED; then
-    PASSWORD=$PASSWORD_PLACEHOLDER
-    return
-  fi
-
-  read -s -r -p $'\nPlease repeat pass phrase : ' PASSWORD_CHECK
-
-  if [ "$PASSWORD" != "$PASSWORD_CHECK" ]
-  then
-    echo
-    echo "Password verification failed"
-    PASSWORD=$PASSWORD_PLACEHOLDER
-    return
-  fi
-}
-
-function askForPasswordIfNeeded {
-  if [ "$PASSWORD" != "$PASSWORD_PLACEHOLDER" ]; then
-    verifyPasswordConditions
-    if $CHECK_FAILED; then
-      exit 1
-    fi
-  fi
-
-  while [ "$PASSWORD" == "$PASSWORD_PLACEHOLDER" ]
-  do
-    readPassword "$1"
-  done
-
-  echo
-}
 
 function readKeystorePassword {
   PASSWORD=$KEYSTORE_PASS
@@ -115,43 +66,16 @@ function settingsBasedOnRole {
   elif [ "$ROLE" == "both" ]; then
     EXTENSION=clientServer_cert
     FILE_SUFFIX=
+  elif [ -z "$ROLE" ]; then
+    echo "No role provided, using default role: 'both'"
+    ROLE="both"
+    EXTENSION=clientServer_cert
+    FILE_SUFFIX=
   else
     echo "Warning: Unsupported role provided, using 'both' as value"
     ROLE="both"
     EXTENSION=clientServer_cert
     FILE_SUFFIX=
-  fi
-}
-
-function subjectAlternativeNames {
-  #Subject Alternative Name provided through config file substitution
-  if [ -n "$SERVICE_SERVER_NAME" ]; then
-    #Clear existing DNS.X lines in openssl.cnf file
-    if [[ "$OSTYPE" == "darwin"* ]]; then
-      sed -i '' '/^DNS./d' openssl.cnf
-    else
-      sed -i '/^DNS./d' openssl.cnf
-    fi
-
-    SED_HOSTNAMES=
-    COUNTER=0
-    #Split given server names by "," separator
-    #Create a string that would place every hostname as a separate DNS.{counter} = {hostname} line
-    IFS=',' read -ra HOSTNAMES <<< "$SERVICE_SERVER_NAME"
-    for HOSTNAME in "${HOSTNAMES[@]}"; do
-      COUNTER=$((COUNTER + 1))
-      SED_HOSTNAMES="$SED_HOSTNAMES\\
-DNS.$COUNTER = $HOSTNAME"
-    done
-
-    #Place that string in openssl.cnf file under [alt_names]
-    if [[ "$OSTYPE" == "darwin"* ]]; then
-      sed -i '' "/\[alt_names\]/ {a${SED_HOSTNAMES}
-}" openssl.cnf
-    else
-      sed -i "/\[alt_names\]/ {a${SED_HOSTNAMES}
-}" openssl.cnf
-    fi
   fi
 }
 
@@ -164,55 +88,68 @@ function generate {
     exit 1
   fi
 
+  if [ -z "$ALIAS" ]; then
+    ALIAS=$SERVICE_NAME
+  fi
+
+  if [ -z "$SUBFOLDER_NAME" ]; then
+    SUBFOLDER_NAME=$SERVICE_NAME
+  fi
+
   readKeystorePassword
   readTruststorePassword
   settingsBasedOnRole
 
-  SERVICE_KEYSTORES_DIR=$KEYSTORES_DIR/$SERVICE_NAME
+  SERVICE_KEYSTORES_DIR=$KEYSTORES_DIR/$SUBFOLDER_NAME
   if [ ! -d "$SERVICE_KEYSTORES_DIR" ]; then
     mkdir -p $SERVICE_KEYSTORES_DIR
   fi
 
-  subjectAlternativeNames
+  if [ "$ROLE" != "client" ]; then
+    subjectAlternativeNames $SERVICE_SERVER_NAME
+  fi
+
+  FILE_NAME=$SERVICE_NAME$FILE_SUFFIX
 
   #Generate key and CSR
-  openssl req -newkey rsa:$KEY_SIZE -nodes -out $CERTIFICATES_DIR/$SERVICE_NAME$FILE_SUFFIX.csr -keyout $CERTIFICATES_DIR/$SERVICE_NAME$FILE_SUFFIX.key -subj "$SERVICE_CERT_DNAME"
+  openssl req -newkey rsa:$KEY_SIZE -nodes -out $CERTIFICATES_DIR/$FILE_NAME.csr -keyout $CERTIFICATES_DIR/$FILE_NAME.key -subj "$SERVICE_CERT_DNAME"
   #Sign CSR with CA
-  openssl ca -config openssl.cnf -extensions $EXTENSION -passin pass:$ROOT_CA_PASS -batch -notext \
-  -in $CERTIFICATES_DIR/$SERVICE_NAME$FILE_SUFFIX.csr -out $CERTIFICATES_DIR/$SERVICE_NAME$FILE_SUFFIX.cer
+  openssl ca -config $SCRIPT_DIR/openssl.cnf -extensions $EXTENSION -passin pass:$ROOT_CA_PASS -batch -notext \
+  -in $CERTIFICATES_DIR/$FILE_NAME.csr -out $CERTIFICATES_DIR/$FILE_NAME.cer
   #Export keystore with key and certificate
-  openssl pkcs12 -export -out $CERTIFICATES_DIR/$SERVICE_NAME$FILE_SUFFIX.p12 -inkey $CERTIFICATES_DIR/$SERVICE_NAME$FILE_SUFFIX.key \
-  -in $CERTIFICATES_DIR/$SERVICE_NAME$FILE_SUFFIX.cer -password pass:$KEYSTORE_PASS -certfile ca/certs/ca.cert.pem
+  openssl pkcs12 -export -out $CERTIFICATES_DIR/$FILE_NAME.p12 -inkey $CERTIFICATES_DIR/$FILE_NAME.key \
+  -in $CERTIFICATES_DIR/$FILE_NAME.cer -password pass:$KEYSTORE_PASS -certfile $CA_DIR/certs/ca.cert.pem
   #Convert keystore to desired format, set alias
   keytool -importkeystore \
-  -srckeystore $CERTIFICATES_DIR/$SERVICE_NAME$FILE_SUFFIX.p12 -destkeystore ${SERVICE_KEYSTORES_DIR}/$SERVICE_NAME$FILE_SUFFIX.keystore \
+  -srckeystore $CERTIFICATES_DIR/$FILE_NAME.p12 -destkeystore ${SERVICE_KEYSTORES_DIR}/$FILE_NAME.keystore \
   -srcstoretype PKCS12 -deststoretype $KEYSTORE_TYPE \
   -srcstorepass $KEYSTORE_PASS -deststorepass $KEYSTORE_PASS \
   -srcalias 1 -destalias $ALIAS \
   -srckeypass $KEYSTORE_PASS -destkeypass $KEYSTORE_PASS \
   -noprompt
   #Import CA certificate into Service keystore, for complete certificate chain
-  keytool -importcert -noprompt -alias ssl.alfresco.ca -file ca/certs/ca.cert.pem \
-  -keystore ${SERVICE_KEYSTORES_DIR}/$SERVICE_NAME$FILE_SUFFIX.keystore -storetype $KEYSTORE_TYPE -storepass $KEYSTORE_PASS
+  keytool -importcert -noprompt -alias ssl.alfresco.ca -file $CA_DIR/certs/ca.cert.pem \
+  -keystore ${SERVICE_KEYSTORES_DIR}/$FILE_NAME.keystore -storetype $KEYSTORE_TYPE -storepass $KEYSTORE_PASS
 
   # Create Keystore password file
-  echo "aliases=$ALIAS" >> ${SERVICE_KEYSTORES_DIR}/keystore-passwords.properties
-  echo "$ALIAS.password=$KEYSTORE_PASS" >> ${SERVICE_KEYSTORES_DIR}/keystore-passwords.properties
+  echo "keystore.password=$KEYSTORE_PASS" >> ${SERVICE_KEYSTORES_DIR}/$FILE_NAME-keystore-passwords.properties
+  echo "aliases=$ALIAS" >> ${SERVICE_KEYSTORES_DIR}/$FILE_NAME-keystore-passwords.properties
+  echo "$ALIAS.password=$KEYSTORE_PASS" >> ${SERVICE_KEYSTORES_DIR}/$FILE_NAME-keystore-passwords.properties
 
   # Include CA certificates in Service Truststore
-  keytool -import -trustcacerts -noprompt -alias alfresco.ca -file ca/certs/ca.cert.pem \
-  -keystore ${SERVICE_KEYSTORES_DIR}/$SERVICE_NAME$FILE_SUFFIX.truststore -storetype $TRUSTSTORE_TYPE -storepass $TRUSTSTORE_PASS
+  keytool -import -trustcacerts -noprompt -alias alfresco.ca -file $CA_DIR/certs/ca.cert.pem \
+  -keystore ${SERVICE_KEYSTORES_DIR}/$FILE_NAME.truststore -storetype $TRUSTSTORE_TYPE -storepass $TRUSTSTORE_PASS
 
   # Create TrustStore password file
-  echo "aliases=alfresco.ca" >> ${SERVICE_KEYSTORES_DIR}/truststore-passwords.properties
-  echo "alfresco.ca.password=$TRUSTSTORE_PASS" >> ${SERVICE_KEYSTORES_DIR}/truststore-passwords.properties
+  echo "keystore.password=$TRUSTSTORE_PASS" >> ${SERVICE_KEYSTORES_DIR}/$FILE_NAME-truststore-passwords.properties
+  echo "aliases=alfresco.ca" >> ${SERVICE_KEYSTORES_DIR}/$FILE_NAME-truststore-passwords.properties
 
   #
   # Removing files for current Alfresco Format
   #
   if [ "$ALFRESCO_FORMAT" = "current" ]; then
-    rm ${SERVICE_KEYSTORES_DIR}/truststore-passwords.properties
-    rm ${SERVICE_KEYSTORES_DIR}/keystore-passwords.properties
+    rm ${SERVICE_KEYSTORES_DIR}/$FILE_NAME-truststore-passwords.properties
+    rm ${SERVICE_KEYSTORES_DIR}/$FILE_NAME-keystore-passwords.properties
   fi
 }
 
@@ -221,6 +158,11 @@ function generate {
 while test $# -gt 0
 do
     case "$1" in
+        # Subfolder name, useful multiple keystores per service, if unset will take on -servicename value
+        -subfoldername)
+            SUBFOLDER_NAME=$2
+            shift
+        ;;
         # Service name
         -servicename)
             SERVICE_NAME=$2
@@ -284,6 +226,7 @@ do
         *)
             echo "An invalid parameter was received: $1"
             echo "Allowed parameters:"
+            echo "  -subfoldername"
             echo "  -servicename"
             echo "  -alias"
             echo "  -role"

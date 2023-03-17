@@ -14,8 +14,53 @@ on:
   workflow_dispatch:
 
 jobs:
-  test_legacy:
+  test_legacy_simple:
     name: "Test legacy simple"
+    runs-on: ubuntu-latest
+    if: >
+      !contains(github.event.head_commit.message, '[skip tests]') &&
+      !contains(github.event.head_commit.message, '[force]')
+    steps:
+      - uses: actions/checkout@v3
+      - uses: Alfresco/alfresco-build-tools/.github/actions/get-build-info@v1.33.0
+      - uses: Alfresco/alfresco-build-tools/.github/actions/setup-java-build@v1.33.0
+      - name: "Generate certificates/keystores/truststores"
+        run: bash ./ssl-tool/samples/legacy_simple.sh
+      - name: "Verify results"
+        run: bash ./scripts/ci/prepare.sh
+
+  test_legacy_client_server:
+    name: "Test legacy client/server"
+    runs-on: ubuntu-latest
+    if: >
+      !contains(github.event.head_commit.message, '[skip tests]') &&
+      !contains(github.event.head_commit.message, '[force]')
+    steps:
+      - uses: actions/checkout@v3
+      - uses: Alfresco/alfresco-build-tools/.github/actions/get-build-info@v1.33.0
+      - uses: Alfresco/alfresco-build-tools/.github/actions/setup-java-build@v1.33.0
+      - name: "Generate certificates/keystores/truststores"
+        run: bash ./ssl-tool/samples/legacy_simple.sh
+      - name: "Verify results"
+        run: bash ./scripts/ci/prepare.sh
+
+  test_new_simple:
+    name: "Test new simple"
+    runs-on: ubuntu-latest
+    if: >
+      !contains(github.event.head_commit.message, '[skip tests]') &&
+      !contains(github.event.head_commit.message, '[force]')
+    steps:
+      - uses: actions/checkout@v3
+      - uses: Alfresco/alfresco-build-tools/.github/actions/get-build-info@v1.33.0
+      - uses: Alfresco/alfresco-build-tools/.github/actions/setup-java-build@v1.33.0
+      - name: "Generate certificates/keystores/truststores"
+        run: bash ./ssl-tool/samples/legacy_simple.sh
+      - name: "Verify results"
+        run: bash ./scripts/ci/prepare.sh
+
+  test_new_client_server:
+    name: "Test new client/server"
     runs-on: ubuntu-latest
     if: >
       !contains(github.event.head_commit.message, '[skip tests]') &&

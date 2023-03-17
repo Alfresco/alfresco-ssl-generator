@@ -11,11 +11,6 @@ source ${SCRIPT_DIR}/../utils.sh
 # Alfresco Format: "classic" / "current" is supported only from 7.0
 ALFRESCO_FORMAT=current
 
-# Cleanup previous output of script
-rm -rd $CA_DIR
-rm -rd $KEYSTORES_DIR
-rm -rd $CERTIFICATES_DIR
-
 #CA
 bash ${SCRIPT_DIR}/../run_ca.sh -keysize 2048 -keystorepass kT9X6oe68t -certdname "/C=GB/ST=UK/L=Maidenhead/O=Alfresco Software Ltd./OU=Unknown/CN=Custom Alfresco CA" -servername localhost
 #Alfresco

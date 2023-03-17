@@ -153,8 +153,10 @@ function generate {
   # Removing files for current Alfresco Format
   #
   if [ "$ALFRESCO_FORMAT" = "current" ]; then
-    rm ${SERVICE_KEYSTORES_DIR}/$FILE_NAME-truststore-passwords.properties
     rm ${SERVICE_KEYSTORES_DIR}/$FILE_NAME-keystore-passwords.properties
+    if [ "$NO_TRUSTSTORE" = "false" ]; then
+      rm ${SERVICE_KEYSTORES_DIR}/$FILE_NAME-truststore-passwords.properties
+    fi
   fi
 }
 

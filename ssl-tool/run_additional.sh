@@ -36,6 +36,7 @@ KEYSTORE_TYPE=JCEKS
 # Default password for every keystore and private key
 KEYSTORE_PASS=$PASSWORD_PLACEHOLDER
 
+NO_TRUSTSTORE=false
 # Truststore format (JKS, JCEKS)
 TRUSTSTORE_TYPE=JCEKS
 # Default password for every truststore
@@ -97,7 +98,9 @@ function generate {
   fi
 
   readKeystorePassword
-  readTruststorePassword
+  if [ "$NO_TRUSTSTORE" = "false" ]; then
+    readTruststorePassword
+  fi
   settingsBasedOnRole
 
   SERVICE_KEYSTORES_DIR=$KEYSTORES_DIR/$SUBFOLDER_NAME
@@ -136,13 +139,15 @@ function generate {
   echo "aliases=$ALIAS" >> ${SERVICE_KEYSTORES_DIR}/$FILE_NAME-keystore-passwords.properties
   echo "$ALIAS.password=$KEYSTORE_PASS" >> ${SERVICE_KEYSTORES_DIR}/$FILE_NAME-keystore-passwords.properties
 
-  # Include CA certificates in Service Truststore
-  keytool -import -trustcacerts -noprompt -alias alfresco.ca -file $CA_DIR/certs/ca.cert.pem \
-  -keystore ${SERVICE_KEYSTORES_DIR}/$FILE_NAME.truststore -storetype $TRUSTSTORE_TYPE -storepass $TRUSTSTORE_PASS
+  if [ "$NO_TRUSTSTORE" = "false" ]; then
+    # Include CA certificates in Service Truststore
+    keytool -import -trustcacerts -noprompt -alias alfresco.ca -file $CA_DIR/certs/ca.cert.pem \
+    -keystore ${SERVICE_KEYSTORES_DIR}/$FILE_NAME.truststore -storetype $TRUSTSTORE_TYPE -storepass $TRUSTSTORE_PASS
 
-  # Create TrustStore password file
-  echo "keystore.password=$TRUSTSTORE_PASS" >> ${SERVICE_KEYSTORES_DIR}/$FILE_NAME-truststore-passwords.properties
-  echo "aliases=alfresco.ca" >> ${SERVICE_KEYSTORES_DIR}/$FILE_NAME-truststore-passwords.properties
+    # Create TrustStore password file
+    echo "keystore.password=$TRUSTSTORE_PASS" >> ${SERVICE_KEYSTORES_DIR}/$FILE_NAME-truststore-passwords.properties
+    echo "aliases=alfresco.ca" >> ${SERVICE_KEYSTORES_DIR}/$FILE_NAME-truststore-passwords.properties
+  fi
 
   #
   # Removing files for current Alfresco Format
@@ -198,6 +203,10 @@ do
             KEYSTORE_PASS=$2
             shift
         ;;
+        # Password for keystores and private keys
+        -notruststore)
+            NO_TRUSTSTORE=true
+        ;;
         # JKS, JCEKS
         -truststoretype)
             TRUSTSTORE_TYPE=$2
@@ -234,6 +243,7 @@ do
             echo "  -keysize"
             echo "  -keystoretype"
             echo "  -keystorepass"
+            echo "  -notruststore"
             echo "  -truststoretype"
             echo "  -truststorepass"
             echo "  -certdname"

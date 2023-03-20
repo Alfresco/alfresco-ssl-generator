@@ -9,7 +9,7 @@ source ${SCRIPT_DIR}/../utils.sh
 
 # SETTINGS
 # Alfresco Format: "classic" / "current" is supported only from 7.0
-ALFRESCO_FORMAT=classic
+ALFRESCO_FORMAT=current
 
 #CA, Repository, Solr, Zeppelin
 bash ${SCRIPT_DIR}/../run.sh -alfrescoversion community -keysize 2048 -keystoretype JCEKS -truststoretype JCEKS -keystorepass kT9X6oe68t -truststorepass kT9X6oe68t -encstorepass mp6yc0UD9e -encmetadatapass oKIWzVdEdA -alfrescoformat $ALFRESCO_FORMAT

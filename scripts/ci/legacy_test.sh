@@ -17,9 +17,10 @@ bash ${SCRIPT_DIR}/../../ssl-tool/run.sh -alfrescoversion community -keysize 204
 echo "Generate sharedFileStore"
 bash ${SCRIPT_DIR}/../../ssl-tool/run_additional.sh -servicename sharedFileStore -rootcapass keystorepass -keysize 2048 -keystoretype PKCS12 -keystorepass additionalkeystorepass -truststoretype JKS -truststorepass additionaltruststorepass -certdname "/C=GB/ST=UK/L=Maidenhead/O=Alfresco Software Ltd./OU=Unknown/CN=Shared File Store" -servername localhost,test -alfrescoformat $ALFRESCO_FORMAT
 
-#--------------------------------------------------------
+echo
+echo "-------------Verifying results-------------"
+echo
 
-echo "Verifying results"
 source ${SCRIPT_DIR}/test_utils.sh
 
 echo "Checking repository"

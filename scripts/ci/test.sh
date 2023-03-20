@@ -39,9 +39,10 @@ bash ${SCRIPT_DIR}/../../ssl-tool/run_additional.sh -servicename sharedFileStore
 bash ${SCRIPT_DIR}/../../ssl-tool/run_additional.sh -servicename transformRouter -alias transformRouter_client -role client -rootcapass capass -keysize 2048 -keystoretype JCEKS -keystorepass transformrouterclientpass -truststoretype JCEKS -truststorepass transformrouterclientpass -certdname "/C=GB/ST=UK/L=Maidenhead/O=Alfresco Software Ltd./OU=Unknown/CN=Transform Router Client" -alfrescoformat $ALFRESCO_FORMAT
 bash ${SCRIPT_DIR}/../../ssl-tool/run_additional.sh -servicename transformRouter -alias transformRouter_server -role server -rootcapass capass -keysize 2048 -keystoretype JCEKS -keystorepass transformrouterserverpass -truststoretype JCEKS -truststorepass transformrouterserverpass -certdname "/C=GB/ST=UK/L=Maidenhead/O=Alfresco Software Ltd./OU=Unknown/CN=Transform Router Server" -servername localhost -alfrescoformat $ALFRESCO_FORMAT
 
-#--------------------------------------------------------
+echo
+echo "-------------Verifying results-------------"
+echo
 
-echo "Verifying results"
 source ${SCRIPT_DIR}/test_utils.sh
 
 echo "Checking repository"

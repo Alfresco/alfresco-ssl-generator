@@ -62,5 +62,51 @@ function validateEncryption {
 
 function validateCertificate {
   content=$(keytool -list -v -keystore $1 -storepass $2)
-  result=$(sed -n "/^$2/p" <<< "$1")
+  result=$(sed -n "/^$3/p" <<< "$content")
+  if [ -z "$result" ]; then
+    echo "Invalid/Missing certificate $3"
+    exit 1
+  fi
+}
+
+function checkSingleSANExists {
+  dns_line="  DNSName: $2"
+  result=$(sed -n "/^$dns_line/p" <<< "$1")
+  if [ -z "$result" ]; then
+    echo "Expected SAN not found $2"
+    exit 1
+  fi
+}
+
+function checkSingleSANDoesntExist {
+  dns_line="  DNSName: $2"
+  result=$(sed -n "/^$dns_line/p" <<< "$1")
+  if [ -n "$result" ]; then
+    echo "Not expected SAN found $2"
+    exit 1
+  fi
+}
+
+function validateSubjectAlternativeNames {
+  content=$(keytool -list -v -keystore $1 -storepass $2)
+
+  checkSingleSANExists "$content" $3
+  if [ -n "${4-}" ]; then
+    checkSingleSANExists "$content" $4
+  fi
+  if [ -n "${5-}" ]; then
+    checkSingleSANExists "$content" $5
+  fi
+}
+
+function validateSubjectAlternativeNamesNotFound {
+  content=$(keytool -list -v -keystore $1 -storepass $2)
+
+  checkSingleSANDoesntExist "$content" $3
+  if [ -n "${4-}" ]; then
+    checkSingleSANDoesntExist "$content" $4
+  fi
+  if [ -n "${5-}" ]; then
+    checkSingleSANDoesntExist "$content" $5
+  fi
 }

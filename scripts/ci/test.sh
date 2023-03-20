@@ -57,16 +57,19 @@ validateKeystore keystores/solr/solr.keystore solrkeystorepass JCEKS "solr" "ssl
 validateTruststore keystores/solr/solr.truststore solrtruststorepass JCEKS "alfresco.ca"
 validateCertificate keystores/solr/solr.keystore solrkeystorepass "Owner: CN=Custom Alfresco Repository Client, OU=Unknown, O=Alfresco Software Ltd., ST=UK, C=GB"
 validateCertificate keystores/solr/solr.keystore solrkeystorepass "Issuer: CN=Custom Alfresco CA, OU=Unknown, O=Alfresco Software Ltd., L=Maidenhead, ST=UK, C=GB"
+validateSubjectAlternativeNames keystores/solr/solr.keystore solrkeystorepass localhost
+validateSubjectAlternativeNamesNotFound keystores/solr/solr.keystore solrkeystorepass test
 echo "Checking solr browser"
 validateKeystore keystores/client/browser_client.keystore browserkeystorepass PKCS12 "browser"
-validateCertificate keystores/client/browser_client.keystore browserkeystorepass browser "Owner: CN=Custom Browser Client, OU=Unknown, O=Alfresco Software Ltd., ST=UK, C=GB"
-validateCertificate keystores/client/browser_client.keystore browserkeystorepass browser "Issuer: CN=Custom Alfresco CA, OU=Unknown, O=Alfresco Software Ltd., L=Maidenhead, ST=UK, C=GB"
+validateCertificate keystores/client/browser_client.keystore browserkeystorepass "Owner: CN=Custom Browser Client, OU=Unknown, O=Alfresco Software Ltd., ST=UK, C=GB"
+validateCertificate keystores/client/browser_client.keystore browserkeystorepass "Issuer: CN=Custom Alfresco CA, OU=Unknown, O=Alfresco Software Ltd., L=Maidenhead, ST=UK, C=GB"
 
 echo "Checking sharedFileStore"
 validateKeystore keystores/sharedFileStore/sharedFileStore.keystore sharedfilestorekeystorepass PKCS12 "sharedfilestore" "ssl.alfresco.ca"
 validateTruststore keystores/sharedFileStore/sharedFileStore.truststore sharedfilestoretruststorepass JKS "alfresco.ca"
 validateCertificate keystores/sharedFileStore/sharedFileStore.keystore sharedfilestorekeystorepass "Owner: CN=Shared File Store, OU=Unknown, O=Alfresco Software Ltd., ST=UK, C=GB"
 validateCertificate keystores/sharedFileStore/sharedFileStore.keystore sharedfilestorekeystorepass "Issuer: CN=Custom Alfresco CA, OU=Unknown, O=Alfresco Software Ltd., L=Maidenhead, ST=UK, C=GB"
+validateSubjectAlternativeNames keystores/sharedFileStore/sharedFileStore.keystore sharedfilestorekeystorepass localhost test
 
 echo "Checking transformRouter client"
 validateKeystore keystores/transformRouter/transformRouter_client.keystore transformrouterclientpass JCEKS "transformrouter_client" "ssl.alfresco.ca"
@@ -79,5 +82,7 @@ validateKeystore keystores/transformRouter/transformRouter_server.keystore trans
 validateTruststore keystores/transformRouter/transformRouter_server.truststore transformrouterserverpass JCEKS "alfresco.ca"
 validateCertificate keystores/transformRouter/transformRouter_server.keystore transformrouterserverpass "Owner: CN=Transform Router Server, OU=Unknown, O=Alfresco Software Ltd., ST=UK, C=GB"
 validateCertificate keystores/transformRouter/transformRouter_server.keystore transformrouterserverpass "Issuer: CN=Custom Alfresco CA, OU=Unknown, O=Alfresco Software Ltd., L=Maidenhead, ST=UK, C=GB"
+validateSubjectAlternativeNames keystores/transformRouter/transformRouter_server.keystore transformrouterserverpass localhost
+validateSubjectAlternativeNamesNotFound keystores/transformRouter/transformRouter_server.keystore transformrouterserverpass test
 
 echo "Success"

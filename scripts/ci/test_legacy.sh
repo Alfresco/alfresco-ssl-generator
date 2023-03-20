@@ -28,6 +28,7 @@ validateKeystore keystores/alfresco/ssl.keystore keystorepass JCEKS "ssl.repo" "
 validateTruststore keystores/alfresco/ssl.truststore truststorepass JCEKS "alfresco.ca"
 validateCertificate keystores/alfresco/ssl.keystore keystorepass "Owner: CN=Custom Alfresco Repository, OU=Unknown, O=Alfresco Software Ltd., ST=UK, C=GB"
 validateCertificate keystores/alfresco/ssl.keystore keystorepass "Issuer: CN=Custom Alfresco CA, OU=Unknown, O=Alfresco Software Ltd., L=Maidenhead, ST=UK, C=GB"
+validateSubjectAlternativeNames keystores/alfresco/ssl.keystore keystorepass localhost test
 echo "Checking encryption"
 validateEncryption keystores/alfresco/keystore encryption PKCS12 "metadata"
 echo "Checking solr"
@@ -35,6 +36,8 @@ validateKeystore keystores/solr/ssl-repo-client.keystore keystorepass JCEKS "ssl
 validateTruststore keystores/solr/ssl-repo-client.truststore truststorepass JCEKS "alfresco.ca"
 validateCertificate keystores/solr/ssl-repo-client.keystore keystorepass "Owner: CN=Custom Alfresco Repository Client, OU=Unknown, O=Alfresco Software Ltd., ST=UK, C=GB"
 validateCertificate keystores/solr/ssl-repo-client.keystore keystorepass "Issuer: CN=Custom Alfresco CA, OU=Unknown, O=Alfresco Software Ltd., L=Maidenhead, ST=UK, C=GB"
+validateSubjectAlternativeNames keystores/solr/ssl-repo-client.keystore keystorepass localhost
+validateSubjectAlternativeNamesNotFound keystores/solr/ssl-repo-client.keystore keystorepass test
 echo "Checking solr browser"
 validateKeystore keystores/client/browser.p12 keystorepass PKCS12 "1"
 validateCertificate keystores/client/browser.p12 keystorepass "Owner: CN=Custom Browser Client, OU=Unknown, O=Alfresco Software Ltd., ST=UK, C=GB"
@@ -45,5 +48,5 @@ validateKeystore keystores/sharedFileStore/sharedFileStore.keystore additionalke
 validateTruststore keystores/sharedFileStore/sharedFileStore.truststore additionaltruststorepass JKS "alfresco.ca"
 validateCertificate keystores/sharedFileStore/sharedFileStore.keystore additionalkeystorepass "Owner: CN=Shared File Store, OU=Unknown, O=Alfresco Software Ltd., ST=UK, C=GB"
 validateCertificate keystores/sharedFileStore/sharedFileStore.keystore additionalkeystorepass "Issuer: CN=Custom Alfresco CA, OU=Unknown, O=Alfresco Software Ltd., L=Maidenhead, ST=UK, C=GB"
-
+validateSubjectAlternativeNames keystores/sharedFileStore/sharedFileStore.keystore additionalkeystorepass localhost test
 echo "Success"

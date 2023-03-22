@@ -21,6 +21,9 @@ KEY_SIZE=2048
 # Password placeholder
 KEYSTORE_PASS=$PASSWORD_PLACEHOLDER
 
+#If not set, assume it's a testing environment, Root CA of a testing environment shouldn't last more than a day
+VALIDITY_DURATION=7300
+
 # SCRIPT
 function cleanupFolders {
   # If target folder for Keystores is not empty, skip generation
@@ -78,7 +81,7 @@ function generate {
 
   openssl req -config $SCRIPT_DIR/openssl.cnf \
         -key $CA_DIR/private/ca.key.pem \
-        -new -x509 -days 7300 -sha256 -extensions v3_ca \
+        -new -x509 -days $VALIDITY_DURATION -sha256 -extensions v3_ca \
         -out $CA_DIR/certs/ca.cert.pem \
         -subj "$CA_DNAME" \
         -passin pass:$KEYSTORE_PASS
@@ -110,6 +113,11 @@ do
             CA_SERVER_NAME="$2"
             shift
         ;;
+        # Validity of Root CA certificate in days
+        -validityduration)
+            VALIDITY_DURATION="$2"
+            shift
+        ;;
         *)
             echo "An invalid parameter was received: $1"
             echo "Allowed parameters:"
@@ -117,6 +125,7 @@ do
             echo "  -keystorepass"
             echo "  -certdname"
             echo "  -servername"
+            echo "  -validityduration"
             exit 1
         ;;
     esac

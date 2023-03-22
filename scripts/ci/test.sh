@@ -12,7 +12,7 @@ ALFRESCO_FORMAT=current
 
 echo "Generate: CA, Repository, Solr, Zeppelin"
 #CA
-bash ${SCRIPT_DIR}/../../ssl-tool/run_ca.sh -keysize 2048 -keystorepass capass -certdname "/C=GB/ST=UK/L=Maidenhead/O=Alfresco Software Ltd./OU=Unknown/CN=Custom Alfresco CA" -servername localhost
+bash ${SCRIPT_DIR}/../../ssl-tool/run_ca.sh -keysize 2048 -keystorepass capass -certdname "/C=GB/ST=UK/L=Maidenhead/O=Alfresco Software Ltd./OU=Unknown/CN=Custom Alfresco CA" -servername localhost -validityduration 1
 #Alfresco Repository
 bash ${SCRIPT_DIR}/../../ssl-tool/run_additional.sh -servicename alfresco -alias repository -rootcapass capass -keysize 2048 -keystoretype JCEKS -keystorepass alfrescokeystorepass -truststoretype PKCS12 -truststorepass alfrescotruststorepass -certdname "/C=GB/ST=UK/L=Maidenhead/O=Alfresco Software Ltd./OU=Unknown/CN=Custom Alfresco Repository" -servername localhost -alfrescoformat $ALFRESCO_FORMAT
 #Alfresco Metadata encryption

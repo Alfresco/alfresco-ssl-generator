@@ -103,6 +103,8 @@ ZEPPELIN_KEYSTORES_DIR=keystores/zeppelin
 CLIENT_KEYSTORES_DIR=keystores/client
 CERTIFICATES_DIR=certificates
 
+CA_VALIDITY_DURATION=7300
+
 # SCRIPT
 # Generates every keystore, trustore and certificate required for Alfresco SSL configuration
 function generate {
@@ -192,7 +194,7 @@ function generate {
 
   openssl req -config $SCRIPT_DIR/openssl.cnf \
         -key ca/private/ca.key.pem \
-        -new -x509 -days 7300 -sha256 -extensions v3_ca \
+        -new -x509 -days $CA_VALIDITY_DURATION -sha256 -extensions v3_ca \
         -out ca/certs/ca.cert.pem \
         -subj "$CA_DNAME" \
         -passin pass:$KEYSTORE_PASS
@@ -442,6 +444,11 @@ do
             ALFRESCO_FORMAT="$2"
             shift
         ;;
+        # Validity of Root CA certificate in days
+        -cavalidityduration)
+            CA_VALIDITY_DURATION="$2"
+            shift
+        ;;
         *)
             echo "An invalid parameter was received: $1"
             echo "Allowed parameters:"
@@ -461,6 +468,7 @@ do
             echo "  -alfrescoservername"
             echo "  -solrservername"
             echo "  -alfrescoformat"
+            echo "  -cavalidityduration"
             exit 1
         ;;
     esac

@@ -12,7 +12,7 @@ source ${SCRIPT_DIR}/../../ssl-tool/utils.sh
 ALFRESCO_FORMAT=current
 
 echo "Generate: CA, Repository, Solr, Zeppelin"
-bash ${SCRIPT_DIR}/../../ssl-tool/run.sh -alfrescoversion community -keysize 2048 -keystoretype JCEKS -truststoretype JCEKS -keystorepass keystorepass -truststorepass truststorepass -encstorepass encryption -encmetadatapass encryption -alfrescoservername localhost,test -alfrescoformat $ALFRESCO_FORMAT
+bash ${SCRIPT_DIR}/../../ssl-tool/run.sh -alfrescoversion community -keysize 2048 -keystoretype JCEKS -truststoretype JCEKS -keystorepass keystorepass -truststorepass truststorepass -encstorepass encryption -encmetadatapass encryption -alfrescoservername localhost,test -alfrescoformat $ALFRESCO_FORMAT -cavalidityduration 1
 
 echo "Generate sharedFileStore"
 bash ${SCRIPT_DIR}/../../ssl-tool/run_additional.sh -servicename sharedFileStore -rootcapass keystorepass -keysize 2048 -keystoretype PKCS12 -keystorepass additionalkeystorepass -truststoretype JKS -truststorepass additionaltruststorepass -certdname "/C=GB/ST=UK/L=Maidenhead/O=Alfresco Software Ltd./OU=Unknown/CN=Shared File Store" -servername localhost,test -alfrescoformat $ALFRESCO_FORMAT

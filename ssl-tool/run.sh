@@ -103,6 +103,7 @@ ZEPPELIN_KEYSTORES_DIR=keystores/zeppelin
 CLIENT_KEYSTORES_DIR=keystores/client
 CERTIFICATES_DIR=certificates
 
+#Root CA validity, left as 7300 for backwards compatibility
 CA_VALIDITY_DURATION=7300
 
 # SCRIPT

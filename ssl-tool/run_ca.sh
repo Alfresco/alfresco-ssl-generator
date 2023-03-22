@@ -22,7 +22,7 @@ KEY_SIZE=2048
 KEYSTORE_PASS=$PASSWORD_PLACEHOLDER
 
 #If not set, assume it's a testing environment, Root CA of a testing environment shouldn't last more than a day
-VALIDITY_DURATION=7300
+VALIDITY_DURATION=1
 
 # SCRIPT
 function cleanupFolders {

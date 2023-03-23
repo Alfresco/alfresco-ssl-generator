@@ -11,9 +11,11 @@ source $SCRIPT_DIR/utils.sh
 
 # PARAMETERS
 
+SERVICE_NAME=encryption
+SUBFOLDER_NAME=$SERVICE_NAME
+
 # Using "current" format by default (only available from ACS 7.0+)
 ALFRESCO_FORMAT=current
-SERVICE_NAME=encryption
 
 # Encryption secret key passwords
 ENC_STORE_PASS=$PASSWORD_PLACEHOLDER
@@ -47,12 +49,13 @@ function generate {
     ENC_KEY_ALG="-keyalg DESede"
   fi
 
-  if [ -n "$SUBFOLDER_NAME" ]; then
-    DESTINATION_DIR=$KEYSTORES_DIR/$SUBFOLDER_NAME
-    if [ ! -d $DESTINATION_DIR ]; then
-      mkdir $DESTINATION_DIR
-    fi
+  DESTINATION_DIR=$KEYSTORES_DIR/$SUBFOLDER_NAME
+  if [ ! -d $DESTINATION_DIR ]; then
+    mkdir $DESTINATION_DIR
   fi
+
+  readEncStorePassword
+  readEncMetadataPassword
 
   # Generate Encryption Secret Key
   keytool -genseckey -alias metadata -keypass $ENC_METADATA_PASS -storepass $ENC_STORE_PASS -keystore ${DESTINATION_DIR}/$SERVICE_NAME.keystore \

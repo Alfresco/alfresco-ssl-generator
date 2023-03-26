@@ -14,6 +14,13 @@ REM It is responsible for sets of keystores and truststores for additional servi
 SET PASSWORD_PLACEHOLDER=password_placeholder
 
 REM ----------
+REM DIRECTORIES
+REM ----------
+SET CA_DIR=ca
+SET KEYSTORES_DIR=keystores
+SET CERTIFICATES_DIR=certificates
+
+REM ----------
 REM PARAMETERS
 REM ----------
 
@@ -30,9 +37,6 @@ REM Distinguished name of the CA
 SET SERVICE_CERT_DNAME=/C=GB/ST=UK/L=Maidenhead/O=Alfresco Software Ltd./OU=Unknown/CN=Custom Service
 REM Service server name, to be used as Alternative Name in the certificates
 SET SERVICE_SERVER_NAME=localhost
-
-SET KEYSTORES_DIR=keystores
-SET CERTIFICATES_DIR=certificates
 
 REM Root CA Password
 SET ROOT_CA_PASS=
@@ -150,7 +154,7 @@ IF NOT "%1"=="" (
 ECHO ---Run Additional Script Execution for %SERVICE_NAME%---
 
 IF "%ROOT_CA_PASS%" == "" (
-  ECHO "Root CA password [parameter: rootcapass] is mandatory"
+  ECHO Root CA password [parameter: rootcapass] is mandatory
   EXIT /b 1
 )
 
@@ -187,7 +191,7 @@ IF NOT EXIST "%SERVICE_KEYSTORES_DIR%" (
   mkdir %SERVICE_KEYSTORES_DIR%
 )
 
-CALL :subjectAlternativeNames
+CALL ./utils_san.cmd "%SERVICE_SERVER_NAME%"
 
 REM Generate key and CSR
 openssl req -newkey rsa:%KEY_SIZE% -nodes -out %CERTIFICATES_DIR%\%SERVICE_NAME%%FILE_SUFFIX%.csr -keyout %CERTIFICATES_DIR%\%SERVICE_NAME%%FILE_SUFFIX%.key -subj "%SERVICE_CERT_DNAME%"
@@ -198,33 +202,32 @@ openssl ca -config openssl.cnf -extensions %EXTENSION% -passin pass:%ROOT_CA_PAS
 
 REM Export keystore with key and certificate
 openssl pkcs12 -export -out %CERTIFICATES_DIR%\%SERVICE_NAME%%FILE_SUFFIX%.p12 -inkey %CERTIFICATES_DIR%\%SERVICE_NAME%%FILE_SUFFIX%.key ^
--in %CERTIFICATES_DIR%\%SERVICE_NAME%%FILE_SUFFIX%.cer -password pass:%KEYSTORE_PASS% -certfile ca\certs\ca.cert.pem
+-in %CERTIFICATES_DIR%\%SERVICE_NAME%%FILE_SUFFIX%.cer -password pass:!KEYSTORE_PASS! -certfile %CA_DIR%\certs\ca.cert.pem
 
 REM Convert keystore to desired format, set alias
 keytool -importkeystore ^
 -srckeystore %CERTIFICATES_DIR%\%SERVICE_NAME%%FILE_SUFFIX%.p12 -destkeystore %SERVICE_KEYSTORES_DIR%\%SERVICE_NAME%%FILE_SUFFIX%.keystore ^
 -srcstoretype PKCS12 -deststoretype %KEYSTORE_TYPE% ^
--srcstorepass %KEYSTORE_PASS% -deststorepass %KEYSTORE_PASS% ^
+-srcstorepass !KEYSTORE_PASS! -deststorepass !KEYSTORE_PASS! ^
 -srcalias 1 -destalias %ALIAS% ^
--srckeypass %KEYSTORE_PASS% -destkeypass %KEYSTORE_PASS% ^
+-srckeypass !KEYSTORE_PASS! -destkeypass !KEYSTORE_PASS! ^
 -noprompt
 
 REM Import CA certificate into Service keystore, for complete certificate chain
-REM TODO check alias usage. ssl.alfresco.ca vs alfresco.ca !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 keytool -importcert -noprompt -alias alfresco.ca -file ca\certs\ca.cert.pem ^
--keystore %SERVICE_KEYSTORES_DIR%\%SERVICE_NAME%%FILE_SUFFIX%.keystore -storetype %KEYSTORE_TYPE% -storepass %KEYSTORE_PASS%
+-keystore %SERVICE_KEYSTORES_DIR%\%SERVICE_NAME%%FILE_SUFFIX%.keystore -storetype %KEYSTORE_TYPE% -storepass !KEYSTORE_PASS!
 
 REM Create Keystore password file
 ECHO aliases=%ALIAS%>> %SERVICE_KEYSTORES_DIR%\keystore-passwords.properties
-ECHO %ALIAS%.password=%KEYSTORE_PASS%>> %SERVICE_KEYSTORES_DIR%\keystore-passwords.properties
+ECHO %ALIAS%.password=!KEYSTORE_PASS!>> %SERVICE_KEYSTORES_DIR%\keystore-passwords.properties
 
 REM Include CA certificates in Service Truststore
 keytool -import -trustcacerts -noprompt -alias alfresco.ca -file ca\certs\ca.cert.pem ^
--keystore %SERVICE_KEYSTORES_DIR%\%SERVICE_NAME%%FILE_SUFFIX%.truststore -storetype %TRUSTSTORE_TYPE% -storepass %TRUSTSTORE_PASS%
+-keystore %SERVICE_KEYSTORES_DIR%\%SERVICE_NAME%%FILE_SUFFIX%.truststore -storetype %TRUSTSTORE_TYPE% -storepass !TRUSTSTORE_PASS!
 
 REM Create TrustStore password file
 ECHO aliases=alfresco.ca>> %SERVICE_KEYSTORES_DIR%\truststore-passwords.properties
-ECHO alfresco.ca.password=%TRUSTSTORE_PASS%>> %SERVICE_KEYSTORES_DIR%\truststore-passwords.properties
+ECHO alfresco.ca.password=!TRUSTSTORE_PASS!>> %SERVICE_KEYSTORES_DIR%\truststore-passwords.properties
 
 REM Removing files for current Alfresco Format
 IF "%ALFRESCO_FORMAT%" == "current" (
@@ -235,91 +238,16 @@ IF "%ALFRESCO_FORMAT%" == "current" (
 REM End of processing
 GOTO :eof
 
-REM Password reading functions
-:verifyPasswordConditions
-  SET CHECK_FAILED=false
-
-  CALL :strLen PASSWORD PASSWORD_LENGTH
-  IF %PASSWORD_LENGTH% LSS 6 (
-    ECHO Password must have at least 6 characters and no more than 1023
-    SET CHECK_FAILED=true
-  ) ELSE IF %PASSWORD_LENGTH% GTR 1023 (
-    ECHO Password must have at least 6 characters and no more than 1023
-    SET CHECK_FAILED=true
-  )
-GOTO :eof
-
-:readPassword
-  SET /p "PASSWORD=Please enter password for %1: "
-
-  CALL :verifyPasswordConditions
-  IF !CHECK_FAILED! == true (
-    SET PASSWORD=%PASSWORD_PLACEHOLDER%
-    GOTO :readPassword
-  )
-
-  SET /p "PASSWORD_CHECK=Please repeat pass phrase : "
-  IF NOT "%PASSWORD%" == "%PASSWORD_CHECK%" (
-    ECHO Password verification failed
-    SET PASSWORD=%PASSWORD_PLACEHOLDER%
-    GOTO :readPassword
-  )
-GOTO :eof
-
-:askForPasswordIfNeeded
-IF NOT "%PASSWORD%" == "%PASSWORD_PLACEHOLDER%" (
-  ECHO Verifying password provided for %1
-  CALL :verifyPasswordConditions
-  IF !CHECK_FAILED! == true (
-    EXIT /B 1
-  ) ELSE (
-    EXIT /B 0
-  )
-)
-CALL :readPassword %2
-GOTO :eof
-
 :readKeystorePassword
 SET PASSWORD=%KEYSTORE_PASS%
-CALL :askForPasswordIfNeeded keystore "[service name] %SERVICE_NAME%, [role] %ROLE%, keystore"
+CALL ./utils_password_prompt.cmd "[service name] %SERVICE_NAME%, [role] %ROLE%, keystore"
 IF ERRORLEVEL 1 ( EXIT /b 1 )
 SET KEYSTORE_PASS=!PASSWORD!
 GOTO :eof
 
 :readTruststorePassword
 SET PASSWORD=%TRUSTSTORE_PASS%
-CALL :askForPasswordIfNeeded truststore "[service name] %SERVICE_NAME%, [role] %ROLE%, truststore"
+CALL ./utils_password_prompt.cmd "[service name] %SERVICE_NAME%, [role] %ROLE%, truststore"
 IF ERRORLEVEL 1 ( EXIT /b 1 )
 SET TRUSTSTORE_PASS=!PASSWORD!
-GOTO :eof
-
-REM Subject Alternative Name provided through config file substitution
-:subjectAlternativeNames
-SET SED_HOSTNAMES=
-IF DEFINED SERVICE_SERVER_NAME (
-  REM Clear existing DNS.X lines in openssl.cnf file
-  powershell -Command "(gc -Encoding utf8 openssl.cnf) | Where-Object {$_ -notmatch '^DNS\.'} | Set-Content openssl.cnf"
-
-  REM Split given server names by "," separator
-  REM Create a string that would place every hostname as a separate DNS.{counter} = {hostname} line
-  SET COUNTER=0
-
-  FOR %%a IN (%SERVICE_SERVER_NAME%) DO (
-    SET /a COUNTER=COUNTER+1
-    SET "SED_HOSTNAMES=!SED_HOSTNAMES!`nDNS.!COUNTER! = %%a"
-  )
-
-  REM Place that string in openssl.cnf file under [alt_names]
-  powershell -Command "(gc -Encoding utf8 openssl.cnf) -replace '\[alt_names\]', \"[alt_names]!SED_HOSTNAMES!\" | Out-File -Encoding utf8 openssl.cnf"
-  REM Remove BOM
-  powershell -Command "(gc -Encoding utf8 openssl.cnf) | Foreach-Object {$_ -replace '\xEF\xBB\xBF', ''} | Set-Content openssl.cnf"
-)
-GOTO :eof
-
-:strLen
-setlocal enabledelayedexpansion
-
-:strLen_Loop
-   IF NOT "!%1:~%len%!"=="" SET /A len+=1 & goto :strLen_Loop
-(endlocal & SET %2=%len%)
 GOTO :eof

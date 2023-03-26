@@ -1,8 +1,9 @@
 @ECHO OFF
+SET PASSWORD_DESCRIPTION=%~1
+SET PASSWORD_PLACEHOLDER=password_placeholder
 
 REM Password reading functions
 IF NOT "%PASSWORD%" == "%PASSWORD_PLACEHOLDER%" (
-  ECHO Verifying password provided for %1
   CALL :verifyPasswordConditions
   IF !CHECK_FAILED! == true (
     EXIT /B 1
@@ -10,16 +11,17 @@ IF NOT "%PASSWORD%" == "%PASSWORD_PLACEHOLDER%" (
     EXIT /B 0
   )
 )
-CALL :readPassword %2
+CALL :readPassword
 GOTO :eof
 
 :readPassword
-  SET /p "PASSWORD=Please enter password for %1: "
+  SET /p "PASSWORD=Please enter password for %PASSWORD_DESCRIPTION%: "
 
   CALL :verifyPasswordConditions
+  
   IF !CHECK_FAILED! == true (
     SET PASSWORD=%PASSWORD_PLACEHOLDER%
-    GOTO :readPassword
+    GOTO :readPassword 
   )
 
   SET /p "PASSWORD_CHECK=Please repeat pass phrase : "
@@ -41,4 +43,12 @@ GOTO :eof
     ECHO Password must have at least 6 characters and no more than 1023
     SET CHECK_FAILED=true
   )
+GOTO :eof
+
+:strLen
+setlocal enabledelayedexpansion
+
+:strLen_Loop
+   IF NOT "!%1:~%len%!"=="" SET /A len+=1 & goto :strLen_Loop
+(endlocal & SET %2=%len%)
 GOTO :eof

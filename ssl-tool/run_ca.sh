@@ -4,12 +4,15 @@ set -o errexit
 set -o pipefail
 set -o nounset
 
+# This script is generating a Root CA
+
+# Load common functions and variables
 SCRIPT_DIR="$(dirname "$(realpath "$0")")"
 source $SCRIPT_DIR/utils.sh
 
-# This script is generating a Root CA
-
+# ----------
 # PARAMETERS
+# ----------
 
 # Distinguished name of the CA
 CA_DNAME="/C=GB/ST=UK/L=Maidenhead/O=Alfresco Software Ltd./OU=Unknown/CN=Custom Alfresco CA"
@@ -26,12 +29,6 @@ VALIDITY_DURATION=1
 
 # SCRIPT
 function cleanupFolders {
-  # If target folder for Keystores is not empty, skip generation
-  if [ "$(ls -A $KEYSTORES_DIR)" ]; then
-    echo "Keystores folder is not empty, skipping generation process..."
-    exit 1
-  fi
-
   # Remove previous working directories and certificates
   if [ -d $CA_DIR ]; then
     rm -rf $CA_DIR/*
@@ -51,7 +48,7 @@ function cleanupFolders {
   fi
 }
 
-function readRootCAPassword {
+function readKeystorePassword {
   PASSWORD=$KEYSTORE_PASS
   askForPasswordIfNeeded "Root CA"
   KEYSTORE_PASS=$PASSWORD
@@ -60,14 +57,24 @@ function readRootCAPassword {
 # Generates CA
 function generate {
 
-  #New CA necessitates new certificates/keystores/truststores
+  if [ $VALIDITY_DURATION -lt 1 ]; then
+    echo "Minimum validity of Root CA is 1 day"
+    exit 1
+  fi
+
+  # If target folder for Keystores is not empty, skip generation
+  if [ "$(ls -A $KEYSTORES_DIR)" ]; then
+    echo "Keystores folder is not empty, skipping generation process..."
+    exit 1
+  fi
+
   cleanupFolders
 
-  readRootCAPassword
+  readKeystorePassword
 
-  #
+  # ------------
   # CA
-  #
+  # ------------
 
   mkdir $CA_DIR/certs $CA_DIR/crl $CA_DIR/newcerts $CA_DIR/private
   chmod 700 $CA_DIR/private
@@ -98,23 +105,23 @@ do
             KEY_SIZE=$2
             shift
         ;;
-        # Password for keystores and private keys
+        # Password for keystore and private key
         -keystorepass)
             KEYSTORE_PASS=$2
             shift
         ;;
         # DName for CA issuing the certificates
-        -certdname)
+        -cacertdname)
             CA_DNAME="$2"
             shift
         ;;
         # DNS name for CA Server
-        -servername)
+        -caservername)
             CA_SERVER_NAME="$2"
             shift
         ;;
         # Validity of Root CA certificate in days
-        -validityduration)
+        -cavalidityduration)
             VALIDITY_DURATION="$2"
             shift
         ;;
@@ -123,9 +130,9 @@ do
             echo "Allowed parameters:"
             echo "  -keysize"
             echo "  -keystorepass"
-            echo "  -certdname"
-            echo "  -servername"
-            echo "  -validityduration"
+            echo "  -cacertdname"
+            echo "  -caservername"
+            echo "  -cavalidityduration"
             exit 1
         ;;
     esac

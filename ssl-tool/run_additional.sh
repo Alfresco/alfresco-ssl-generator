@@ -4,20 +4,23 @@ set -o errexit
 set -o pipefail
 set -o nounset
 
+# This script is a follow up to run_ca.sh script.
+# It is responsible for sets of keystores and truststores for services to be used in mTLS approach.
+
+# Load common functions and variables
 SCRIPT_DIR="$(dirname "$(realpath "$0")")"
 source $SCRIPT_DIR/utils.sh
 
-# This script is a follow up to run_ca.sh script.
-# It is responsible for sets of keystores and truststores for services to be used in mTLS approach.
 
 # PARAMETERS
 
 # Using "current" format by default (only available from ACS 7.0+)
 ALFRESCO_FORMAT=current
-# Folder name to place results of script in
-SUBFOLDER_NAME=
+
 # Service name, to be used as folder name where results are generated to
 SERVICE_NAME=service
+# Folder name to place results of script in
+SUBFOLDER_NAME=
 # Alias of private key
 ALIAS=
 # Role to be fulfilled by the keystore key (both/client/server)
@@ -33,13 +36,13 @@ ROOT_CA_PASS=
 KEY_SIZE=2048
 # Keystore format (PKCS12, JKS, JCEKS)
 KEYSTORE_TYPE=JCEKS
-# Default password for every keystore and private key
+# Default password for keystore and private key
 KEYSTORE_PASS=$PASSWORD_PLACEHOLDER
 
 NO_TRUSTSTORE=false
 # Truststore format (JKS, JCEKS)
 TRUSTSTORE_TYPE=JCEKS
-# Default password for every truststore
+# Default password for truststore
 TRUSTSTORE_PASS=$PASSWORD_PLACEHOLDER
 
 function readKeystorePassword {
@@ -68,15 +71,13 @@ function settingsBasedOnRole {
     EXTENSION=clientServer_cert
     FILE_SUFFIX=
   elif [ -z "$ROLE" ]; then
-    echo "No role provided, using default role: 'both'"
+    echo "Warning: No role provided, using default role: 'both'"
     ROLE="both"
     EXTENSION=clientServer_cert
     FILE_SUFFIX=
   else
-    echo "Warning: Unsupported role provided, using 'both' as value"
-    ROLE="both"
-    EXTENSION=clientServer_cert
-    FILE_SUFFIX=
+    echo "Unsupported role provided $ROLE, valid roles are client/server/both"
+    exit 1
   fi
 }
 
@@ -97,11 +98,12 @@ function generate {
     SUBFOLDER_NAME=$SERVICE_NAME
   fi
 
+  settingsBasedOnRole
+
   readKeystorePassword
   if [ "$NO_TRUSTSTORE" = "false" ]; then
     readTruststorePassword
   fi
-  settingsBasedOnRole
 
   SERVICE_KEYSTORES_DIR=$KEYSTORES_DIR/$SUBFOLDER_NAME
   if [ ! -d "$SERVICE_KEYSTORES_DIR" ]; then
@@ -116,12 +118,15 @@ function generate {
 
   #Generate key and CSR
   openssl req -newkey rsa:$KEY_SIZE -nodes -out $CERTIFICATES_DIR/$FILE_NAME.csr -keyout $CERTIFICATES_DIR/$FILE_NAME.key -subj "$SERVICE_CERT_DNAME"
+
   #Sign CSR with CA
   openssl ca -config $SCRIPT_DIR/openssl.cnf -extensions $EXTENSION -passin pass:$ROOT_CA_PASS -batch -notext \
   -in $CERTIFICATES_DIR/$FILE_NAME.csr -out $CERTIFICATES_DIR/$FILE_NAME.cer
+
   #Export keystore with key and certificate
   openssl pkcs12 -export -out $CERTIFICATES_DIR/$FILE_NAME.p12 -inkey $CERTIFICATES_DIR/$FILE_NAME.key \
   -in $CERTIFICATES_DIR/$FILE_NAME.cer -password pass:$KEYSTORE_PASS -certfile $CA_DIR/certs/ca.cert.pem
+
   #Convert keystore to desired format, set alias
   keytool -importkeystore \
   -srckeystore $CERTIFICATES_DIR/$FILE_NAME.p12 -destkeystore ${SERVICE_KEYSTORES_DIR}/$FILE_NAME.keystore \
@@ -130,6 +135,7 @@ function generate {
   -srcalias 1 -destalias $ALIAS \
   -srckeypass $KEYSTORE_PASS -destkeypass $KEYSTORE_PASS \
   -noprompt
+
   #Import CA certificate into Service keystore, for complete certificate chain
   keytool -importcert -noprompt -alias ssl.alfresco.ca -file $CA_DIR/certs/ca.cert.pem \
   -keystore ${SERVICE_KEYSTORES_DIR}/$FILE_NAME.keystore -storetype $KEYSTORE_TYPE -storepass $KEYSTORE_PASS
@@ -165,17 +171,17 @@ function generate {
 while test $# -gt 0
 do
     case "$1" in
-        # Subfolder name, useful multiple keystores per service, if unset will take on -servicename value
-        -subfoldername)
-            SUBFOLDER_NAME=$2
-            shift
-        ;;
         # Service name
         -servicename)
             SERVICE_NAME=$2
             shift
         ;;
-        # Alias
+        # Subfolder name, useful multiple keystores per service, if unset will take on -servicename value
+        -subfoldername)
+            SUBFOLDER_NAME=$2
+            shift
+        ;;
+        # Private Key alias
         -alias)
             ALIAS=$2
             shift
@@ -200,12 +206,12 @@ do
             KEYSTORE_TYPE=$2
             shift
         ;;
-        # Password for keystores and private keys
+        # Password for keystore and private key
         -keystorepass)
             KEYSTORE_PASS=$2
             shift
         ;;
-        # Password for keystores and private keys
+        # Flag blocking generating of a truststore
         -notruststore)
             NO_TRUSTSTORE=true
         ;;
@@ -214,7 +220,7 @@ do
             TRUSTSTORE_TYPE=$2
             shift
         ;;
-        # Password for truststores
+        # Password for truststore
         -truststorepass)
             TRUSTSTORE_PASS=$2
             shift
@@ -237,8 +243,8 @@ do
         *)
             echo "An invalid parameter was received: $1"
             echo "Allowed parameters:"
-            echo "  -subfoldername"
             echo "  -servicename"
+            echo "  -subfoldername"
             echo "  -alias"
             echo "  -role"
             echo "  -rootcapass"

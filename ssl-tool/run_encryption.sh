@@ -4,37 +4,44 @@ set -o errexit
 set -o pipefail
 set -o nounset
 
+# This script is generating metadata encryption keystore
+
+# Load common functions and variables
 SCRIPT_DIR="$(dirname "$(realpath "$0")")"
 source $SCRIPT_DIR/utils.sh
 
-# This script is generating metadata encryption keystore
-
+# ----------
 # PARAMETERS
+# ----------
 
 SERVICE_NAME=encryption
-SUBFOLDER_NAME=$SERVICE_NAME
+SUBFOLDER_NAME=
 
 # Using "current" format by default (only available from ACS 7.0+)
 ALFRESCO_FORMAT=current
 
 # Encryption secret key passwords
-ENC_STORE_PASS=$PASSWORD_PLACEHOLDER
-ENC_METADATA_PASS=$PASSWORD_PLACEHOLDER
+KEYSTORE_PASS=$PASSWORD_PLACEHOLDER
+KEY_PASS=$PASSWORD_PLACEHOLDER
 
-function readEncStorePassword {
-  PASSWORD=$ENC_STORE_PASS
+function readKeystorePassword {
+  PASSWORD=$KEYSTORE_PASS
   askForPasswordIfNeeded "Encryption Keystore"
-  ENC_STORE_PASS=$PASSWORD
+  KEYSTORE_PASS=$PASSWORD
 }
 
-function readEncMetadataPassword {
-  PASSWORD=$ENC_METADATA_PASS
+function readKeyPassword {
+  PASSWORD=$KEY_PASS
   askForPasswordIfNeeded "Encryption Key"
-  ENC_METADATA_PASS=$PASSWORD
+  KEY_PASS=$PASSWORD
 }
 
 # Generates Metadata keystore
 function generate {
+  if [ -z "$SUBFOLDER_NAME" ]; then
+    SUBFOLDER_NAME=$SERVICE_NAME
+  fi
+
   # Encryption keystore format: PKCS12 (default for "current"), JCEKS (default for "classic")
   if [ "$ALFRESCO_FORMAT" == "current" ]; then
     ENC_STORE_TYPE=PKCS12
@@ -54,20 +61,20 @@ function generate {
     mkdir $DESTINATION_DIR
   fi
 
-  readEncStorePassword
-  readEncMetadataPassword
+  readKeystorePassword
+  readKeyPassword
 
   # Generate Encryption Secret Key
-  keytool -genseckey -alias metadata -keypass $ENC_METADATA_PASS -storepass $ENC_STORE_PASS -keystore ${DESTINATION_DIR}/$SERVICE_NAME.keystore \
+  keytool -genseckey -alias metadata -keypass $KEY_PASS -storepass $KEYSTORE_PASS -keystore ${DESTINATION_DIR}/$SERVICE_NAME.keystore \
   -storetype $ENC_STORE_TYPE $ENC_KEY_ALG
 
   if [ "$ALFRESCO_FORMAT" != "current" ]; then
     # Create Alfresco Encryption password file
     echo "aliases=metadata" >> ${DESTINATION_DIR}/$SERVICE_NAME-keystore-passwords.properties
-    echo "keystore.password=$ENC_STORE_PASS" >> ${DESTINATION_DIR}/$SERVICE_NAME-keystore-passwords.properties
+    echo "keystore.password=$KEYSTORE_PASS" >> ${DESTINATION_DIR}/$SERVICE_NAME-keystore-passwords.properties
     echo "metadata.keyData=" >> ${DESTINATION_DIR}/$SERVICE_NAME-keystore-passwords.properties
     echo "metadata.algorithm=DESede" >> ${DESTINATION_DIR}/$SERVICE_NAME-keystore-passwords.properties
-    echo "metadata.password=$ENC_METADATA_PASS" >> ${DESTINATION_DIR}/$SERVICE_NAME-keystore-passwords.properties
+    echo "metadata.password=$KEY_PASS" >> ${DESTINATION_DIR}/$SERVICE_NAME-keystore-passwords.properties
   fi
 }
 
@@ -88,12 +95,12 @@ do
         ;;
         # Password for encryption keystore
         -encstorepass)
-            ENC_STORE_PASS=$2
+            KEYSTORE_PASS=$2
             shift
         ;;
         # Password for encryption metadata
         -encmetadatapass)
-            ENC_METADATA_PASS=$2
+            KEY_PASS=$2
             shift
         ;;
         # Alfresco Format: "classic" / "current" is supported only from 7.0
@@ -105,6 +112,7 @@ do
             echo "An invalid parameter was received: $1"
             echo "Allowed parameters:"
             echo "  -subfoldername"
+            echo "  -servicename"
             echo "  -encstorepass"
             echo "  -encmetadatapass"
             echo "  -alfrescoformat"

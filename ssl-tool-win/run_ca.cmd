@@ -1,5 +1,7 @@
 @ECHO OFF
 
+REM This script is generating a Root CA
+
 REM Open script through new cmd, to not save password inputs in command line history
 IF "%~1"=="-clearhistory" GOTO :scriptStart
 CMD /S /C "%~f0 -clearhistory %*"
@@ -29,7 +31,8 @@ SET KEY_SIZE=2048
 REM Default password for every keystore and private key
 SET KEYSTORE_PASS=password_placeholder
 
-SET CA_VALIDITY_DURATION=1
+REM If not set, assume it's a testing environment, Root CA of a testing environment shouldn't last more than a day
+SET VALIDITY_DURATION=1
 
 REM Parse params from command line
 :loop
@@ -39,41 +42,52 @@ IF NOT "%1"=="" (
 	SHIFT
 	GOTO loop
   )
+  REM 1024, 2048, 4096, ...
   IF "%1"=="-keysize" (
     SHIFT
     SET KEY_SIZE=%2
     SHIFT
     GOTO loop
   )
+  REM Password for keystore and private key
   IF "%1"=="-keystorepass" (
     SHIFT
     SET KEYSTORE_PASS=%2
     SHIFT
     GOTO loop
   )
+  REM DName for CA issuing the certificates
   IF "%1"=="-cacertdname" (
     SHIFT
     SET CA_DNAME=%~2
     SHIFT
     GOTO loop
   )
+  REM DNS name for CA Server
   IF "%1"=="-caservername" (
     SHIFT
     SET CA_SERVER_NAME=%~2
     SHIFT
     GOTO loop
   )
+  REM Validity of Root CA certificate in days
   IF "%1"=="-cavalidityduration" (
     SHIFT
-    SET CA_VALIDITY_DURATION=%2
+    SET VALIDITY_DURATION=%2
     SHIFT
     GOTO loop
   )
   ECHO An invalid parameter was received: %1
+  ECHO Allowed parameters:
+  ECHO   -keysize
+  ECHO   -keystorepass
+  ECHO   -cacertdname
+  ECHO   -caservername
+  ECHO   -cavalidityduration
   EXIT /b
 )
 
-IF %CA_VALIDITY_DURATION% LSS 1 (
+IF %VALIDITY_DURATION% LSS 1 (
   ECHO Minimum validity of Root CA is 1 day
   EXIT /b 1
 )
@@ -86,10 +100,10 @@ FOR /F %%A in ('dir /b /a %KEYSTORES_DIR%') DO (
 
 setlocal enabledelayedexpansion
 
+CALL :cleanupFolders
+
 CALL :readKeystorePassword
 IF ERRORLEVEL 1 ( EXIT /b 1 )
-
-CALL :cleanupFolders
 
 REM ------------
 REM CA
@@ -105,7 +119,7 @@ CALL ./utils_san.cmd "%CA_SERVER_NAME%"
 
 openssl req -config openssl.cnf ^
       -key %CA_DIR%\private\ca.key.pem ^
-      -new -x509 -days %CA_VALIDITY_DURATION% -sha256 -extensions v3_ca ^
+      -new -x509 -days %VALIDITY_DURATION% -sha256 -extensions v3_ca ^
       -out %CA_DIR%\certs\ca.cert.pem ^
       -subj "%CA_DNAME%" ^
       -passin pass:!KEYSTORE_PASS!

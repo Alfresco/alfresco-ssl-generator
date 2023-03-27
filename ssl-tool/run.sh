@@ -4,9 +4,6 @@ set -o errexit
 set -o pipefail
 set -o nounset
 
-SCRIPT_DIR="$(dirname "$(realpath "$0")")"
-source $SCRIPT_DIR/utils.sh
-
 # This script generates certificates for Repository and SOLR TLS/SSL Mutual Auth Communication:
 #
 # * CA Entity to issue all required certificates (alias alfresco.ca)
@@ -55,6 +52,10 @@ source $SCRIPT_DIR/utils.sh
 # "solr" files must be copied to "solr6/keystore"
 # "zeppelin" files must be copied to "zeppelin/keystore"
 # "client" files can be used from a browser to access the server using HTTPS in port 8443
+
+# Load common functions and variables
+SCRIPT_DIR="$(dirname "$(realpath "$0")")"
+source $SCRIPT_DIR/utils.sh
 
 # PARAMETERS
 

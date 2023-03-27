@@ -1,5 +1,7 @@
 @ECHO OFF
 
+REM This script is generating metadata encryption keystore
+
 REM Open script through new cmd, to not save password inputs in command line history
 IF "%~1"=="-clearhistory" GOTO :scriptStart
 CMD /S /C "%~f0 -clearhistory %*"
@@ -67,7 +69,17 @@ IF NOT "%1"=="" (
     GOTO loop
   )
   ECHO An invalid parameter was received: %1
+  ECHO Allowed parameters:
+  ECHO   -subfoldername
+  ECHO   -servicename
+  ECHO   -encstorepass
+  ECHO   -encmetadatapass
+  ECHO   -alfrescoformat
   EXIT /b
+)
+
+IF "%SUBFOLDER_NAME%"=="" (
+  SET SUBFOLDER_NAME=%SERVICE_NAME%
 )
 
 REM Encryption keystore format: PKCS12 (default for "current"), JCEKS (default for "classic")
@@ -84,12 +96,7 @@ IF "%ALFRESCO_FORMAT%" == "current" (
   SET ENC_KEY_ALG=-keyalg DESede
 )
 
-IF "%SUBFOLDER_NAME%"=="" (
-  SET DESTINATION_DIR=%KEYSTORES_DIR%\%SERVICE_NAME%
-) ELSE (
-  SET DESTINATION_DIR=%KEYSTORES_DIR%\%SUBFOLDER_NAME%
-)
-
+SET DESTINATION_DIR=%KEYSTORES_DIR%\%SUBFOLDER_NAME%
 IF NOT EXIST "%DESTINATION_DIR%" (
   mkdir %DESTINATION_DIR%
 )
@@ -115,7 +122,6 @@ IF NOT "%ALFRESCO_FORMAT%" == "current" (
 )
 
 endlocal
-
 GOTO :eof
 
 

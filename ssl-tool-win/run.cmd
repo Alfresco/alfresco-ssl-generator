@@ -91,6 +91,8 @@ REM Encryption secret key passwords
 SET ENC_STORE_PASS=password
 SET ENC_METADATA_PASS=password
 
+SET CA_VALIDITY_DURATION=7300
+
 REM Parse params from command line
 :loop
 IF NOT "%1"=="" (
@@ -190,6 +192,12 @@ IF NOT "%1"=="" (
     SHIFT
     GOTO loop
   )
+  IF "%1"=="-cavalidityduration" (
+    SHIFT
+    SET CA_VALIDITY_DURATION=%~2
+    SHIFT
+    GOTO loop
+  )
   ECHO "An invalid parameter was received: %1"
   EXIT /b
 )
@@ -284,7 +292,7 @@ openssl genrsa -aes256 -passout pass:%KEYSTORE_PASS% -out ca\private\ca.key.pem 
 CALL :subjectAlternativeNames %CA_SERVER_NAME%
 openssl req -config openssl.cnf ^
       -key ca\private\ca.key.pem ^
-      -new -x509 -days 7300 -sha256 -extensions v3_ca ^
+      -new -x509 -days %CA_VALIDITY_DURATION% -sha256 -extensions v3_ca ^
       -out ca\certs\ca.cert.pem ^
       -subj "%CA_DNAME%" ^
       -passin pass:%KEYSTORE_PASS%

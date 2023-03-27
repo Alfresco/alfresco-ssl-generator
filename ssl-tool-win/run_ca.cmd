@@ -57,21 +57,21 @@ IF NOT "%1"=="" (
     GOTO loop
   )
   REM DName for CA issuing the certificates
-  IF "%1"=="-cacertdname" (
+  IF "%1"=="-certdname" (
     SHIFT
     SET CA_DNAME=%~2
     SHIFT
     GOTO loop
   )
   REM DNS name for CA Server
-  IF "%1"=="-caservername" (
+  IF "%1"=="-servername" (
     SHIFT
     SET CA_SERVER_NAME=%~2
     SHIFT
     GOTO loop
   )
   REM Validity of Root CA certificate in days
-  IF "%1"=="-cavalidityduration" (
+  IF "%1"=="-validityduration" (
     SHIFT
     SET VALIDITY_DURATION=%2
     SHIFT
@@ -81,9 +81,9 @@ IF NOT "%1"=="" (
   ECHO Allowed parameters:
   ECHO   -keysize
   ECHO   -keystorepass
-  ECHO   -cacertdname
-  ECHO   -caservername
-  ECHO   -cavalidityduration
+  ECHO   -certdname
+  ECHO   -servername
+  ECHO   -validityduration
   EXIT /b
 )
 

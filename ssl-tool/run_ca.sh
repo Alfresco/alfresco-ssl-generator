@@ -111,17 +111,17 @@ do
             shift
         ;;
         # DName for CA issuing the certificates
-        -cacertdname)
+        -certdname)
             CA_DNAME="$2"
             shift
         ;;
         # DNS name for CA Server
-        -caservername)
+        -servername)
             CA_SERVER_NAME="$2"
             shift
         ;;
         # Validity of Root CA certificate in days
-        -cavalidityduration)
+        -validityduration)
             VALIDITY_DURATION="$2"
             shift
         ;;
@@ -130,9 +130,9 @@ do
             echo "Allowed parameters:"
             echo "  -keysize"
             echo "  -keystorepass"
-            echo "  -cacertdname"
-            echo "  -caservername"
-            echo "  -cavalidityduration"
+            echo "  -certdname"
+            echo "  -servername"
+            echo "  -validityduration"
             exit 1
         ;;
     esac

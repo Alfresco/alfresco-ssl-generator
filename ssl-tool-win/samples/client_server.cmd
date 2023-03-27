@@ -1,4 +1,6 @@
-KEYSTORES_DIR=keystores
+@ECHO OFF
+
+SET KEYSTORES_DIR=keystores
 
 rd /s /q ca
 rd /s /q certificates
@@ -17,13 +19,13 @@ call run_encryption.cmd -subfoldername alfresco -servicename encryption -encstor
 REM Solr
 call run_additional.cmd -servicename solr -rootcapass kT9X6oe68t -keysize 2048 -keystoretype JCEKS -keystorepass kT9X6oe68t -truststoretype JCEKS -truststorepass kT9X6oe68t -certdname "/C=GB/ST=UK/L=Maidenhead/O=Alfresco Software Ltd./OU=Unknown/CN=Custom Alfresco Repository Client" -servername localhost -alfrescoformat %ALFRESCO_FORMAT%
 REM Zeppelin (copy of Solr for enterprise)
-SET ZEPPELIN_DIR=%KEYSTORES_DIR%/zeppelin
+SET ZEPPELIN_DIR=%KEYSTORES_DIR%\zeppelin
 IF EXIST "%ZEPPELIN_DIR%" (
   rmdir /s /q %ZEPPELIN_DIR%
 )
 mkdir %ZEPPELIN_DIR%
-copy %KEYSTORES_DIR%/solr/solr.keystore %ZEPPELIN_DIR%/zeppelin.keystore
-copy %KEYSTORES_DIR%/solr/solr.truststore %ZEPPELIN_DIR%/zeppelin.truststore
+copy %KEYSTORES_DIR%\solr\solr.keystore %ZEPPELIN_DIR%\zeppelin.keystore
+copy %KEYSTORES_DIR%\solr\solr.truststore %ZEPPELIN_DIR%\zeppelin.truststore
 REM Solr browser
 call run_additional.cmd -subfoldername client -servicename browser -role client -rootcapass kT9X6oe68t -keysize 2048 -keystoretype PKCS12 -keystorepass kT9X6oe68t -notruststore -certdname "/C=GB/ST=UK/L=Maidenhead/O=Alfresco Software Ltd./OU=Unknown/CN=Custom Browser Client" -alfrescoformat %ALFRESCO_FORMAT%
 

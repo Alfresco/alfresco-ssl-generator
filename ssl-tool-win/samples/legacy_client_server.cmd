@@ -1,3 +1,5 @@
+@ECHO OFF
+
 rd /s /q ca
 rd /s /q certificates
 rd /s /q keystores

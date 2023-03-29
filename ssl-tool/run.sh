@@ -53,6 +53,10 @@ set -o nounset
 # "zeppelin" files must be copied to "zeppelin/keystore"
 # "client" files can be used from a browser to access the server using HTTPS in port 8443
 
+# Load common functions and variables
+SCRIPT_DIR="$(dirname "$(realpath "$0")")"
+source $SCRIPT_DIR/utils.sh
+
 # PARAMETERS
 
 # Version of Alfresco: enterprise, community
@@ -99,6 +103,9 @@ SOLR_KEYSTORES_DIR=keystores/solr
 ZEPPELIN_KEYSTORES_DIR=keystores/zeppelin
 CLIENT_KEYSTORES_DIR=keystores/client
 CERTIFICATES_DIR=certificates
+
+#Root CA validity, left as 7300 for backwards compatibility
+CA_VALIDITY_DURATION=7300
 
 # SCRIPT
 # Generates every keystore, trustore and certificate required for Alfresco SSL configuration
@@ -185,43 +192,33 @@ function generate {
   openssl genrsa -aes256 -passout pass:$KEYSTORE_PASS -out ca/private/ca.key.pem $KEY_SIZE
   chmod 400 ca/private/ca.key.pem
 
-  if [[ "$OSTYPE" == "darwin"* ]]; then
-    sed -i '' "s/DNS.1.*/DNS.1 = $CA_SERVER_NAME/" openssl.cnf;
-  else
-    sed -i "s/DNS.1.*/DNS.1 = $CA_SERVER_NAME/" openssl.cnf;
-  fi
+  subjectAlternativeNames $CA_SERVER_NAME
 
-  openssl req -config openssl.cnf \
+  openssl req -config $SCRIPT_DIR/openssl.cnf \
         -key ca/private/ca.key.pem \
-        -new -x509 -days 7300 -sha256 -extensions v3_ca \
+        -new -x509 -days $CA_VALIDITY_DURATION -sha256 -extensions v3_ca \
         -out ca/certs/ca.cert.pem \
         -subj "$CA_DNAME" \
         -passin pass:$KEYSTORE_PASS
   chmod 444 ca/certs/ca.cert.pem
 
   # Generate Server Certificate for Alfresco (issued by just generated CA)
-  if [[ "$OSTYPE" == "darwin"* ]]; then
-    sed -i '' "s/DNS.1.*/DNS.1 = $ALFRESCO_SERVER_NAME/" openssl.cnf;
-  else
-    sed -i "s/DNS.1.*/DNS.1 = $ALFRESCO_SERVER_NAME/" openssl.cnf;
-  fi
+  subjectAlternativeNames $ALFRESCO_SERVER_NAME
+
   openssl req -newkey rsa:$KEY_SIZE -nodes -out $CERTIFICATES_DIR/repository.csr -keyout $CERTIFICATES_DIR/repository.key -subj "$REPO_CERT_DNAME"
 
-  openssl ca -config openssl.cnf -extensions clientServer_cert -passin pass:$KEYSTORE_PASS -batch -notext \
+  openssl ca -config $SCRIPT_DIR/openssl.cnf -extensions clientServer_cert -passin pass:$KEYSTORE_PASS -batch -notext \
   -in $CERTIFICATES_DIR/repository.csr -out $CERTIFICATES_DIR/repository.cer
 
   openssl pkcs12 -export -out $CERTIFICATES_DIR/repository.p12 -inkey $CERTIFICATES_DIR/repository.key \
   -in $CERTIFICATES_DIR/repository.cer -password pass:$KEYSTORE_PASS -certfile ca/certs/ca.cert.pem
 
   # Server Certificate for SOLR (issued by just generated CA)
-  if [[ "$OSTYPE" == "darwin"* ]]; then
-    sed -i '' "s/DNS.1.*/DNS.1 = $SOLR_SERVER_NAME/" openssl.cnf;
-  else
-    sed -i "s/DNS.1.*/DNS.1 = $SOLR_SERVER_NAME/" openssl.cnf;
-  fi
+  subjectAlternativeNames $SOLR_SERVER_NAME
+
   openssl req -newkey rsa:$KEY_SIZE -nodes -out $CERTIFICATES_DIR/solr.csr -keyout $CERTIFICATES_DIR/solr.key -subj "$SOLR_CLIENT_CERT_DNAME"
 
-  openssl ca -config openssl.cnf -extensions clientServer_cert -passin pass:$KEYSTORE_PASS -batch -notext \
+  openssl ca -config $SCRIPT_DIR/openssl.cnf -extensions clientServer_cert -passin pass:$KEYSTORE_PASS -batch -notext \
   -in $CERTIFICATES_DIR/solr.csr -out $CERTIFICATES_DIR/solr.cer
 
   openssl pkcs12 -export -out $CERTIFICATES_DIR/solr.p12 -inkey $CERTIFICATES_DIR/solr.key \
@@ -231,7 +228,7 @@ function generate {
   openssl req -newkey rsa:$KEY_SIZE -nodes -out $CERTIFICATES_DIR/browser.csr -keyout $CERTIFICATES_DIR/browser.key \
   -subj "$BROWSER_CLIENT_CERT_DNAME"
 
-  openssl ca -config openssl.cnf -extensions client_cert -passin pass:$KEYSTORE_PASS -batch -notext \
+  openssl ca -config $SCRIPT_DIR/openssl.cnf -extensions client_cert -passin pass:$KEYSTORE_PASS -batch -notext \
   -in $CERTIFICATES_DIR/browser.csr -out $CERTIFICATES_DIR/browser.cer
 
   openssl pkcs12 -export -out $CERTIFICATES_DIR/browser.p12 -inkey $CERTIFICATES_DIR/browser.key \
@@ -449,6 +446,11 @@ do
             ALFRESCO_FORMAT="$2"
             shift
         ;;
+        # Validity of Root CA certificate in days
+        -cavalidityduration)
+            CA_VALIDITY_DURATION="$2"
+            shift
+        ;;
         *)
             echo "An invalid parameter was received: $1"
             echo "Allowed parameters:"
@@ -468,6 +470,7 @@ do
             echo "  -alfrescoservername"
             echo "  -solrservername"
             echo "  -alfrescoformat"
+            echo "  -cavalidityduration"
             exit 1
         ;;
     esac

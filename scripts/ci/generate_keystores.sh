@@ -5,6 +5,7 @@
 ALFRESCO_FORMAT=current
 
 #Contains directory settings
+SCRIPT_DIR="$(dirname "$(realpath "$0")")"
 source ${SCRIPT_DIR}/../../ssl-tool/utils.sh
 
 # SETTINGS

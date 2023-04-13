@@ -40,7 +40,7 @@ bash ${SCRIPT_DIR}/../../ssl-tool/run_additional.sh -servicename tengineTika -ro
 #T-Engine Misc
 bash ${SCRIPT_DIR}/../../ssl-tool/run_additional.sh -servicename tengineMisc -rootcapass password -keysize 2048 -keystoretype JCEKS -keystorepass password -truststoretype JCEKS -truststorepass password -certdname "/C=GB/ST=UK/L=Maidenhead/O=Alfresco Software Ltd./OU=Unknown/CN=T-Engine Misc" -servername localhost,misc -alfrescoformat $ALFRESCO_FORMAT
 #Transform Aspose
-${GITHUB_WORKSPACE}/alfresco-ssl-generator/ssl-tool/run_additional.sh -servicename tAspose -rootcapass password -keysize 2048 -keystoretype JCEKS -keystorepass password -truststoretype JCEKS -truststorepass password -certdname "/C=GB/ST=UK/L=Maidenhead/O=Alfresco Software Ltd./OU=Unknown/CN=Transform Aspose" -servername localhost,transform-aspose -alfrescoformat $ALFRESCO_FORMAT
+bash ${SCRIPT_DIR}/../../ssl-tool/run_additional.sh -servicename tAspose -rootcapass password -keysize 2048 -keystoretype JCEKS -keystorepass password -truststoretype JCEKS -truststorepass password -certdname "/C=GB/ST=UK/L=Maidenhead/O=Alfresco Software Ltd./OU=Unknown/CN=Transform Aspose" -servername localhost,transform-aspose -alfrescoformat $ALFRESCO_FORMAT
 
 #HttpClient used in tests
 bash ${SCRIPT_DIR}/../../ssl-tool/run_additional.sh -servicename testClient -rootcapass password -keysize 2048 -keystoretype JCEKS -keystorepass password -truststoretype JCEKS -truststorepass password -certdname "/C=GB/ST=UK/L=Maidenhead/O=Alfresco Software Ltd./OU=Unknown/CN=Test Client" -servername localhost,test-client -alfrescoformat $ALFRESCO_FORMAT

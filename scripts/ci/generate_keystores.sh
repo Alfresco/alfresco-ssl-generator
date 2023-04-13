@@ -46,7 +46,7 @@ bash ${SCRIPT_DIR}/../../ssl-tool/run_additional.sh -servicename tAspose -rootca
 bash ${SCRIPT_DIR}/../../ssl-tool/run_additional.sh -servicename testClient -rootcapass password -keysize 2048 -keystoretype JCEKS -keystorepass password -truststoretype JCEKS -truststorepass password -certdname "/C=GB/ST=UK/L=Maidenhead/O=Alfresco Software Ltd./OU=Unknown/CN=Test Client" -servername localhost,test-client -alfrescoformat $ALFRESCO_FORMAT
 
 #Convert keystore and truststore format to PEM (only PEM is accepted by curl)
-TEST_CLIENT_PATH="${SCRIPT_DIR}/../../keystores/testClient"
+TEST_CLIENT_PATH="${SCRIPT_DIR}/keystores/testClient"
 TEST_CLIENT_CURL_KEYSTORE="testClient_keystore"
 TEST_CLIENT_CURL_TRUSTSTORE="testClient_truststore"
 

@@ -44,15 +44,3 @@ bash ${SCRIPT_DIR}/../../ssl-tool/run_additional.sh -servicename tAspose -rootca
 
 #HttpClient used in tests
 bash ${SCRIPT_DIR}/../../ssl-tool/run_additional.sh -servicename testClient -rootcapass password -keysize 2048 -keystoretype JCEKS -keystorepass password -truststoretype JCEKS -truststorepass password -certdname "/C=GB/ST=UK/L=Maidenhead/O=Alfresco Software Ltd./OU=Unknown/CN=Test Client" -servername localhost,test-client -alfrescoformat $ALFRESCO_FORMAT
-
-#Convert keystore and truststore format to PEM (only PEM is accepted by curl)
-TEST_CLIENT_PATH="${SCRIPT_DIR}/keystores/testClient"
-TEST_CLIENT_CURL_KEYSTORE="testClient_keystore"
-TEST_CLIENT_CURL_TRUSTSTORE="testClient_truststore"
-
-keytool -noprompt -importkeystore -srckeystore ${TEST_CLIENT_PATH}/testClient.keystore -destkeystore ${TEST_CLIENT_PATH}/${TEST_CLIENT_CURL_KEYSTORE}.p12 -srcstoretype JCEKS -deststoretype PKCS12 -deststorepass password -srcstorepass password
-openssl pkcs12 -in ${TEST_CLIENT_PATH}/${TEST_CLIENT_CURL_KEYSTORE}.p12 -nokeys -out ${TEST_CLIENT_PATH}/client-cert.pem -password pass:password
-openssl pkcs12 -in ${TEST_CLIENT_PATH}/${TEST_CLIENT_CURL_KEYSTORE}.p12 -password pass:password -nocerts -out ${TEST_CLIENT_PATH}/client-key.pem -passout pass:password
-
-keytool -noprompt -importkeystore -srckeystore ${TEST_CLIENT_PATH}/testClient.truststore -destkeystore ${TEST_CLIENT_PATH}/${TEST_CLIENT_CURL_TRUSTSTORE}.p12 -srcstoretype JCEKS -deststoretype PKCS12 -deststorepass password -srcstorepass password
-openssl pkcs12 -in ${TEST_CLIENT_PATH}/${TEST_CLIENT_CURL_TRUSTSTORE}.p12 -out ${TEST_CLIENT_PATH}/${TEST_CLIENT_CURL_TRUSTSTORE}.pem -password pass:password -passout pass:password

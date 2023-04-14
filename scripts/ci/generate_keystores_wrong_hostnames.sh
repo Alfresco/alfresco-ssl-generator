@@ -1,5 +1,8 @@
 #! /bin/bash
 
+#This script is used in MTLS test in different repositories.
+#Be cautions when manipulating with it.
+
 # SETTINGS
 # Alfresco Format: "classic" / "current" is supported only from 7.0
 ALFRESCO_FORMAT=current

@@ -1,7 +1,7 @@
 #! /bin/bash
 
-#This script is used in MTLS test in different repositories.
-#Be cautions when manipulating with it.
+#This script is used by MTLS tests in many repositories (acs-packaging, community-repo, transform-service, transform-aspose, ai-renditions).
+#Be cautious #when manipulating it
 
 # SETTINGS
 # Alfresco Format: "classic" / "current" is supported only from 7.0

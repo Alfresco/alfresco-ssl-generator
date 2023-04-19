@@ -79,7 +79,7 @@ CA_SERVER_NAME=localhost
 ALFRESCO_SERVER_NAME=localhost
 SOLR_SERVER_NAME=localhost
 
-# RSA key length (1024, 2048, 4096)
+# RSA key length (2048, 4096)
 KEY_SIZE=2048
 
 # Keystore format (PKCS12, JKS, JCEKS)
@@ -371,7 +371,7 @@ do
             ALFRESCO_VERSION=$2
             shift
         ;;
-        # 1024, 2048, 4096, ...
+        # 2048, 4096, ...
         -keysize)
             KEY_SIZE=$2
             shift

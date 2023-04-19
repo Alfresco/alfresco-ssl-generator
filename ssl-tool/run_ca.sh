@@ -19,13 +19,13 @@ CA_DNAME="/C=GB/ST=UK/L=Maidenhead/O=Alfresco Software Ltd./OU=Unknown/CN=Custom
 # Alfresco and SOLR server names, to be used as Alternative Name in the certificates
 CA_SERVER_NAME=localhost
 
-# RSA key length (1024, 2048, 4096)
+# RSA key length (2048, 4096)
 KEY_SIZE=2048
 # Password placeholder
 KEYSTORE_PASS=$PASSWORD_PLACEHOLDER
 
 #If not set, assume it's a testing environment, Root CA of a testing environment shouldn't last more than a day
-VALIDITY_DURATION=1
+VALIDITY_DURATION=365
 
 # SCRIPT
 function cleanupFolders {
@@ -100,7 +100,7 @@ function generate {
 while test $# -gt 0
 do
     case "$1" in
-        # 1024, 2048, 4096, ...
+        # 2048, 4096, ...
         -keysize)
             KEY_SIZE=$2
             shift

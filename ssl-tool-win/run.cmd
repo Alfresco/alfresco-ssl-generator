@@ -74,7 +74,7 @@ SET CA_SERVER_NAME=localhost
 SET ALFRESCO_SERVER_NAME=localhost
 SET SOLR_SERVER_NAME=localhost
 
-REM RSA key length (1024, 2048, 4096)
+REM RSA key length (2048, 4096)
 SET KEY_SIZE=2048
 
 REM Keystore format (PKCS12, JKS, JCEKS)

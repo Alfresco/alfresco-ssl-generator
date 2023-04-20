@@ -9,19 +9,16 @@ As HTTPs invocations happen between different Alfresco services, following relat
 * Repository is client of SOLR and Transform Services
 
   * Repository key must be generated and must be included in *Repository keystore*
-  * ~~Repository public certificate must be included in *SOLR truststore*~~
   * Root CA certificate must be included in *Repository truststore*
 
 * SOLR is client of Repository and SOLR
 
   * SOLR key must be generated and must be included in *SOLR keystore*
-  * ~~SOLR public certificate must be included in Repository and *SOLR truststore*~~
   * Root CA certificate must be included in *SOLR truststore*
 
 * Zeppelin is client of Repository (Zeppelin is a product only available for Insight Engine Enterprise)
 
   * Zeppelin key must be generated and must be included in *Zeppelin keystore*
-  * ~~Zeppelin public certificate must be included in *Repository truststore*~~
   * Root CA certificate must be included in *Zeppelin truststore*
   * Note that this script tool uses the same key certificates for SOLR and Zeppelin, as both are clients of the Repository
 
@@ -35,7 +32,6 @@ As HTTPs invocations happen between different Alfresco services, following relat
   * Root CA certificate must be included in *Transform Service truststore* for every Transform Service present
 
 Additionally, to support Alfresco *encryption* feature, a metadata cyphering key is generated and included on a *keystore* to be used by the Repository.
-
 
 ## Usage
 
@@ -157,7 +153,8 @@ Scripts have been updated to handle multiple Service Alternative Names. To provi
 
 ## Bash Shell Script Standalone (Linux, Mac OS X)
 
-When working on a *Linux* machine, shell scripts can be used directly from command line. It's required to have `OpenSSL` and `keytool` programs available in the environment.
+When working on a *Linux* machine, shell scripts can be used directly from command line. It's required to have `OpenSSL` and `keytool` programs available in the environment. 
+It is recommended to use the latest versions of these programs when possible.
 
 The scripts parameters can be set through command line.
 
@@ -233,10 +230,17 @@ If you desire more control and granularity, or need to add other services into t
 Samples of using these scripts and how they replace the `run.sh` functionality or add on to it can be found in `ssl-tool\samples` folder of this project. 
 Keep in mind that some locations of generated scripts or names of keystores might differ between the samples of new approach (`run_ca.sh` + `run_encryption.sh` + `run_additional.sh`) and legacy approach (`run.sh` + `run_additional.sh`). 
 
+If you'd like to restrict the certificates provided to a truststore, to pick and choose between which ones should be added to which service, you can do that by adding to the command of `run_additional.sh` script the `-notruststore` flag.
+This flag causes `run_additional.sh` script to not generate a truststore on its own. Afterwards you can write your own instructions to generate a truststore by picking certificates from the `certificates` folder that would end up in it after running the scripts.
+Sample command that would create a truststore for Solr that contains only the Repository certificate:
+keytool -importcert -noprompt -alias alfresco -file certificates/alfresco.cer -keystore keystores/solr/solr.truststore -storetype JCEKS -storepass password
+
+You can add more certificates this way.
 
 ## Batch Script Standalone (Windows)
 
-When working on a *Windows* machine, shell script `ssl-tool-win/run.cmd` can be used directly from command line. It's required to have `OpenSSL` and `keytool` programs available in the *PATH*.
+When working on a *Windows* machine, shell scripts can be used directly from command line. It's required to have `OpenSSL` and `keytool` programs available in the *PATH*.
+It is recommended to use the latest versions of these programs when possible.
 
 The parameters described above, can be used from command line.
 
@@ -307,6 +311,13 @@ If you desire more control and granularity, or need to add other services into t
 
 Samples of using these scripts and how they replace the `run.cmd` functionality or add on to it can be found in `ssl-tool-win\samples` folder of this project.
 Keep in mind that some locations of generated scripts or names of keystores might differ between the samples of new approach (`run_ca.cmd` + `run_encryption.cmd` + `run_additional.cmd`) and legacy approach (`run.cmd` + `run_additional.cmd`).
+
+If you'd like to restrict the certificates provided to a truststore, to pick and choose between which ones should be added to which service, you can do that by adding to the command of `run_additional.cmd` script the `-notruststore` flag.
+This flag causes `run_additional.cmd` script to not generate a truststore on its own. Afterwards you can write your own instructions to generate a truststore by picking certificates from the `certificates` folder that would end up in it after running the scripts.
+Sample command that would create a truststore for Solr that contains only the Repository certificate:
+keytool -importcert -noprompt -alias alfresco -file certificates/alfresco.cer -keystore keystores/solr/solr.truststore -storetype JCEKS -storepass password
+
+You can add more certificates this way.
 
 ## Installing Browser certificate
 

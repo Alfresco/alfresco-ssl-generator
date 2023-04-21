@@ -32,7 +32,7 @@ SERVICE_SERVER_NAME=localhost
 
 # Root CA Password
 ROOT_CA_PASS=
-# RSA key length (1024, 2048, 4096)
+# RSA key length (2048, 4096)
 KEY_SIZE=2048
 # Keystore format (PKCS12, JKS, JCEKS)
 KEYSTORE_TYPE=JCEKS
@@ -196,7 +196,7 @@ do
             ROOT_CA_PASS=$2
             shift
         ;;
-        # 1024, 2048, 4096, ...
+        # 2048, 4096, ...
         -keysize)
             KEY_SIZE=$2
             shift

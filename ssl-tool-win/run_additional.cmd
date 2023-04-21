@@ -43,7 +43,7 @@ SET SERVICE_SERVER_NAME=localhost
 
 REM Root CA Password
 SET ROOT_CA_PASS=
-REM RSA key length (1024, 2048, 4096)
+REM RSA key length (2048, 4096)
 SET KEY_SIZE=2048
 REM Keystore format (PKCS12, JKS, JCEKS)
 SET KEYSTORE_TYPE=JCEKS
@@ -99,7 +99,7 @@ IF NOT "%1"=="" (
     SHIFT
     GOTO loop
   )
-  REM 1024, 2048, 4096, ...
+  REM 2048, 4096, ...
   IF "%1"=="-keysize" (
     SHIFT
     SET KEY_SIZE=%2

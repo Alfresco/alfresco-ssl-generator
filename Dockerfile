@@ -23,7 +23,7 @@ RUN chmod +x ./run.sh && \
 
 # Default values for env variables
 ENV ALFRESCO_VERSION=enterprise \
-    KEY_SIZE=1024 \
+    KEY_SIZE=2048 \
     KEYSTORE_TYPE=JCEKS \
     TRUSTSTORE_TYPE=JCEKS \
     KEYSTORE_PASS=keystore \

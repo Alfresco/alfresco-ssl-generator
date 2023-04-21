@@ -92,7 +92,7 @@ Oracle JRE 11 と OpenJDK JRE 11 の両方を使用できます。運用シス�
 | スクリプトパラメータ名 | Docker パラメータ名 | 説明                  | 値                      |
 |-|-|-|-|
 | -alfrescoversion      | ALFRESCO_VERSION      | Alfresco バージョンのタイプ     | `enterprise` もしくは `community` |
-| -keysize              | KEY_SIZE              | RSA 鍵の長さ               | `1024`, `2048`, `4096`...   |
+| -keysize              | KEY_SIZE              | RSA 鍵の長さ               | `2048`, `4096`...   |
 | -keystoretype         | KEYSTORE_TYPE         | キーストアのタイプ (秘密鍵を含む)  | `PKCS12`, `JKS`, `JCEKS` |
 | -truststoretype       | TRUSTSTORE_TYPE       | トラストストアのタイプ (公開鍵を含む) | `JKS`, `JCEKS`           |
 | -keystorepass         | KEYSTORE_PASS         | キーストアのパスワード   | 任意の文字列                  |

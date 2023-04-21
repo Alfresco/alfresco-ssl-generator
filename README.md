@@ -6,29 +6,32 @@ This project is not officially supported by Alfresco, as it provides just a samp
 
 As HTTPs invocations happen between different Alfresco services, following relationships must be satisfied:
 
-* Repository is client of SOLR
+* Repository is client of SOLR and Transform Services
 
   * Repository key must be generated and must be included in *Repository keystore*
-  * Repository public certificate must be included in *SOLR truststore*
+  * Root CA certificate must be included in *Repository truststore*
 
 * SOLR is client of Repository and SOLR
 
   * SOLR key must be generated and must be included in *SOLR keystore*
-  * SOLR public certificate must be included in Repository and *SOLR truststore*
+  * Root CA certificate must be included in *SOLR truststore*
 
 * Zeppelin is client of Repository (Zeppelin is a product only available for Insight Engine Enterprise)
 
   * Zeppelin key must be generated and must be included in *Zeppelin keystore*
-  * Zeppelin public certificate must be included in *Repository truststore*
+  * Root CA certificate must be included in *Zeppelin truststore*
   * Note that this script tool uses the same key certificates for SOLR and Zeppelin, as both are clients of the Repository
 
 * When accessing SOLR from a browser, the browser is client of SOLR
 
   * Browser key must be installed on the browser in order to access SOLR Web Console
 
+* Transform Services (Transform Router, T-Engines, Transform Aspose, AI Renditions, Shared File Store)
+
+  * Transform Service key must be generated and must be included in *Transform Service keystore* for every Transform Service present
+  * Root CA certificate must be included in *Transform Service truststore* for every Transform Service present
 
 Additionally, to support Alfresco *encryption* feature, a metadata cyphering key is generated and included on a *keystore* to be used by the Repository.
-
 
 ## Usage
 
@@ -38,6 +41,8 @@ Certificates generation script `run.sh` is based in `OpenSSL` and Java `keytool`
 * *Windows Batch Script Standalone*, as a local batch script from Windows operative systems. The batch script and the OpenSSL configuration file are available in `ssl-tool-win` folder.
 * *Docker Standalone*, as a local container generating `keystores` folder from environment variable values. Available from Linux, Windows and Mac OS X.
 * *Docker Compose*, as a Docker service creating `keystores` folder from environment variable values. Available from Linux, Windows and Mac OS X.
+
+New certificates generation scripts `run_ca.sh`, `run_encryption.sh` and `run_additional.sh` have been created to respond to the need of adding a varying number of additional services to mTLS. They also provide more granularity and control over passwords and other settings. They are currently unavailable for use in *Docker Standalone* and *Docker Compose*
 
 ## Requisites
 
@@ -90,10 +95,10 @@ Both Oracle JRE 11 and OpenJDK JRE 11 can be used, just follow the installation 
 
 Both command line scripts and Docker Image resources can be parametrised by using external parameter values. Different options are described in the table below.
 
-| Script parameter name | Docker Parameter name | Description                  | Values                      |
+| Script `run` parameter name | Docker Parameter name | Description                  | Values                      |
 |-|-|-|-|
 | -alfrescoversion      | ALFRESCO_VERSION      | Type of Alfresco Version     | `enterprise` or `community` |
-| -keysize              | KEY_SIZE              | RSA key length               | `1024`, `2048`, `4096`...   |
+| -keysize              | KEY_SIZE              | RSA key length               | `2048`, `4096`..., by default `2048`   |
 | -keystoretype         | KEYSTORE_TYPE         | Type of the keystores (containing private keys)  | `PKCS12`, `JKS`, `JCEKS` |
 | -truststoretype       | TRUSTSTORE_TYPE       | Type of the truststores (containing public keys) | `JKS`, `JCEKS`           |
 | -keystorepass         | KEYSTORE_PASS         | Password for the keystores   | Any string                  |
@@ -108,14 +113,50 @@ Both command line scripts and Docker Image resources can be parametrised by usin
 | -alfrescoservername   | ALFRESCO_SERVER_NAME  | DNS Name for Alfresco Server | Any string, `localhost` by default        |
 | -solrservername       | SOLR_SERVER_NAME      | DNS Name for SOLR Server     | Any string, `localhost` by default        |
 | -alfrescoformat       | ALFRESCO_FORMAT       | Default format for certificates, truststores and keystores | `classic` or `current` (only supported from ACS 7.0) |
+| -cavalidityduration   | CA_VALIDITY_DURATION  | Validity duration of the Root CA in days | Positive integer, `7300` by default |
+
+| Script `run_ca` parameter name | Description                  | Values                      |
+|-|-|-|
+| -keysize              | RSA key length               | `2048`, `4096`...   |
+| -keystorepass         | Password for the keystores   | Any string between 6 to 1023 characters, if not provided a prompt will be displayed                  |
+| -certdname            | Distinguished Name of the CA certificate, starting with slash and quoted | "/C=GB/ST=UK/L=Maidenhead/O=Alfresco Software Ltd./OU=Unknown/CN=Custom Alfresco CA" |
+| -servername           | DNS Name for CA Server       | Any string, `localhost` by default        |
+| -validityduration     | Validity duration of the Root CA in days | Positive integer, `365` by default |
+
+| Script `run_encryption` parameter name | Description                  | Values                      |
+|-|-|-|
+| -servicename          | Service name, will be used for keystore file name and key alias | Any string, by default `encryption`        |
+| -subfoldername        | Name of a subfolder where the *encryption* keystore will be placed | Any string, by default the same as value of `servicename` parameter        |
+| -encstorepass         | Password for the *encryption* keystore | Any string between 6 to 1023 characters, if not provided a prompt will be displayed        |
+| -encmetadatapass      | Password for the *encryption* metadata | Any string between 6 to 1023 characters, if not provided a prompt will be displayed        |
+| -alfrescoformat       | Default format for certificates, truststores and keystores | `classic` or `current` (only supported from ACS 7.0) |
+
+| Script `run_additional` parameter name | Description                  | Values                      |
+|-|-|-|
+| -servicename          | Service name, will be used for keystore file name and key alias | Any string, by default `service`        |
+| -subfoldername        | Name of a subfolder where the *service* keystore will be placed | Any string, by default the same as value of `servicename` parameter        |
+| -alias                | Key alias                    | Any string, by default the same as value of `servicename` parameter        |
+| -role                 | Role to be fulfilled by the keystore key, different roles correspond to dedicated settings in openssl.cnf file | `client`, `server`, `both`, by default `both`        |
+| -rootcapass           | Password set for Root CA, is required for signing the additional keystores | Any string. Lack of this parameter will result with an exception.       |
+| -keysize              | RSA key length               | `2048`, `4096`..., by default `2048`   |
+| -keystoretype         | Type of the keystores (containing private keys)  | `PKCS12`, `JKS`, `JCEKS`, by default `JCEKS` |
+| -keystorepass         | Password for the keystores   | Any string between 6 to 1023 characters, if not provided a prompt will be displayed                  |
+| -notruststore         | Flag for blocking truststore generation | N/A, providing the flag turns off truststore generation           |
+| -truststoretype       | Type of the truststores (containing public keys) | `JKS`, `JCEKS`, by default `JCEKS`           |
+| -truststorepass       | Password for the truststores | Any string between 6 to 1023 characters, if not provided a prompt will be displayed                  |
+| -certdname            | Distinguished Name of the CA certificate, starting with slash and quoted | "/C=GB/ST=UK/L=Maidenhead/O=Alfresco Software Ltd./OU=Unknown/CN=Custom Service" |
+| -servername           | DNS Name for CA Server       | Any string, `localhost` by default        |
+| -alfrescoformat       | Default format for certificates, truststores and keystores | `classic` or `current` (only supported from ACS 7.0) |
 
 When using Alfresco on an internal network, each server should have a different name. This names can be configured on the parameters named as `*servername`. In order to avoid browser complains about certificates, it's recommended to include the name of the server as `Alternative Name` in the certificate. This should be at least required for SOLR Web Console, as this application is only available in `https` when using this configuration. If you are working under a Web Proxy, use the name of this proxy for the `*servername` parameters.
+Scripts have been updated to handle multiple Service Alternative Names. To provide multiple of them seperate them with `,`, example: `-servername localhost,additionalSAN`. For Windows variant the value needs to be enclosed in double quotes.
 
 ## Bash Shell Script Standalone (Linux, Mac OS X)
 
-When working on a *Linux* machine, shell script `ssl-tool/run.sh` can be used directly from command line. It's required to have `OpenSSL` and `keytool` programs available in the environment.
+When working on a *Linux* machine, shell scripts can be used directly from command line. It's required to have `OpenSSL` and `keytool` programs available in the environment. 
+It is recommended to use the latest versions of these programs when possible.
 
-The parameters described above, can be used from command line.
+The scripts parameters can be set through command line.
 
 For instance, the following command will produce `keystores` folder in a host folder named `keystores` using RSA key length of 2048 bits for Alfresco Enterprise.
 
@@ -181,9 +222,25 @@ keystores/
 
 For the `current` format all the passwords are passed to the applications using Java Environment Variables, so the password files are not required any more.
 
+If you desire more control and granularity, or need to add other services into the mTLS mix, then you might want to consider using `run_ca.sh`, `run_encryption.sh` and `run_additional.sh` in place of `run.sh` script or only `run_additional.sh` as an addition. 
+`run_ca.sh` - script responsible for preparing folders (ca, certificates, keystores) and generating the Root CA,
+`run_encryption.sh` - script responsible for generating the metadata encryption keystore
+`run_additional.sh` - script using the previously generated CA (with `run.sh` or `run_ca.sh` script) to generate additional sets of keystore and truststore.
+
+Samples of using these scripts and how they replace the `run.sh` functionality or add on to it can be found in `ssl-tool\samples` folder of this project. 
+Keep in mind that some locations of generated scripts or names of keystores might differ between the samples of new approach (`run_ca.sh` + `run_encryption.sh` + `run_additional.sh`) and legacy approach (`run.sh` + `run_additional.sh`). 
+
+If you'd like to restrict the certificates provided to a truststore, to pick and choose between which ones should be added to which service, you can do that by adding to the command of `run_additional.sh` script the `-notruststore` flag.
+This flag causes `run_additional.sh` script to not generate a truststore on its own. Afterwards you can write your own instructions to generate a truststore by picking certificates from the `certificates` folder that would end up in it after running the scripts.
+Sample command that would create a truststore for Solr that contains only the Repository certificate:
+keytool -importcert -noprompt -alias alfresco -file certificates/alfresco.cer -keystore keystores/solr/solr.truststore -storetype JCEKS -storepass password
+
+You can add more certificates this way.
+
 ## Batch Script Standalone (Windows)
 
-When working on a *Windows* machine, shell script `ssl-tool-win/run.cmd` can be used directly from command line. It's required to have `OpenSSL` and `keytool` programs available in the *PATH*.
+When working on a *Windows* machine, shell scripts can be used directly from command line. It's required to have `OpenSSL` and `keytool` programs available in the *PATH*.
+It is recommended to use the latest versions of these programs when possible.
 
 The parameters described above, can be used from command line.
 
@@ -246,6 +303,21 @@ C:\> tree /F keystores
 ```
 
 For the `current` format all the passwords are passed to the applications using Java Environment Variables, so the password files are not required any more.
+
+If you desire more control and granularity, or need to add other services into the mTLS mix, then you might want to consider using `run_ca.cmd`, `run_encryption.cmd` and `run_additional.cmd` in place of `run.cmd` script or only `run_additional.cmd` as an addition.
+`run_ca.cmd` - script responsible for preparing folders (ca, certificates, keystores) and generating the Root CA,
+`run_encryption.cmd` - script responsible for generating the metadata encryption keystore
+`run_additional.cmd` - script using the previously generated CA (with `run.cmd` or `run_ca.cmd` script) to generate additional sets of keystore and truststore.
+
+Samples of using these scripts and how they replace the `run.cmd` functionality or add on to it can be found in `ssl-tool-win\samples` folder of this project.
+Keep in mind that some locations of generated scripts or names of keystores might differ between the samples of new approach (`run_ca.cmd` + `run_encryption.cmd` + `run_additional.cmd`) and legacy approach (`run.cmd` + `run_additional.cmd`).
+
+If you'd like to restrict the certificates provided to a truststore, to pick and choose between which ones should be added to which service, you can do that by adding to the command of `run_additional.cmd` script the `-notruststore` flag.
+This flag causes `run_additional.cmd` script to not generate a truststore on its own. Afterwards you can write your own instructions to generate a truststore by picking certificates from the `certificates` folder that would end up in it after running the scripts.
+Sample command that would create a truststore for Solr that contains only the Repository certificate:
+keytool -importcert -noprompt -alias alfresco -file certificates/alfresco.cer -keystore keystores/solr/solr.truststore -storetype JCEKS -storepass password
+
+You can add more certificates this way.
 
 ## Installing Browser certificate
 

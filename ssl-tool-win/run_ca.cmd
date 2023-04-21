@@ -26,13 +26,13 @@ SET CA_DNAME=/C=GB/ST=UK/L=Maidenhead/O=Alfresco Software Ltd./OU=Unknown/CN=Cus
 REM Alfresco and SOLR server names, to be used as Alternative Name in the certificates
 SET CA_SERVER_NAME=localhost
 
-REM RSA key length (1024, 2048, 4096)
+REM RSA key length (2048, 4096)
 SET KEY_SIZE=2048
 REM Default password for every keystore and private key
 SET KEYSTORE_PASS=password_placeholder
 
 REM If not set, assume it's a testing environment, Root CA of a testing environment shouldn't last more than a day
-SET VALIDITY_DURATION=1
+SET VALIDITY_DURATION=365
 
 REM Parse params from command line
 :loop
@@ -42,7 +42,7 @@ IF NOT "%1"=="" (
 	SHIFT
 	GOTO loop
   )
-  REM 1024, 2048, 4096, ...
+  REM 2048, 4096, ...
   IF "%1"=="-keysize" (
     SHIFT
     SET KEY_SIZE=%2

@@ -22,6 +22,8 @@ bash ${SCRIPT_DIR}/../../ssl-tool/run_ca.sh -keysize 2048 -keystorepass password
 bash ${SCRIPT_DIR}/../../ssl-tool/run_additional.sh -servicename alfresco -rootcapass password -keysize 2048 -keystoretype JCEKS -keystorepass password -truststoretype JCEKS -truststorepass password -certdname "/C=GB/ST=UK/L=Maidenhead/O=Alfresco Software Ltd./OU=Unknown/CN=Custom Alfresco Repository" -servername localhost,alfresco -alfrescoformat $ALFRESCO_FORMAT
 #Alfresco Metadata encryption
 bash ${SCRIPT_DIR}/../../ssl-tool/run_encryption.sh -subfoldername alfresco -servicename encryption -encstorepass mp6yc0UD9e -encmetadatapass oKIWzVdEdA -alfrescoformat $ALFRESCO_FORMAT
+#Search Engine
+bash ${SCRIPT_DIR}/../../ssl-tool/run_additional.sh -servicename searchEngine -rootcapass password -keysize 2048 -keystoretype JCEKS -keystorepass password -truststoretype JCEKS -truststorepass password -certdname "/C=GB/ST=UK/L=Maidenhead/O=Alfresco Software Ltd./OU=Unknown/CN=Search Engine" -servername localhost,solr,solr4,solr6,elasticsearch,live-indexing -alfrescoformat $ALFRESCO_FORMAT
 #T-Engine AIO
 bash ${SCRIPT_DIR}/../../ssl-tool/run_additional.sh -servicename tengineAIO -rootcapass password -keysize 2048 -keystoretype JCEKS -keystorepass password -truststoretype JCEKS -truststorepass password -certdname "/C=GB/ST=UK/L=Maidenhead/O=Alfresco Software Ltd./OU=Unknown/CN=T-Engine AIO" -servername localhost,transform-core-aio -alfrescoformat $ALFRESCO_FORMAT
 #Shared file store

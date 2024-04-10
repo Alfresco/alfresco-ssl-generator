@@ -15,7 +15,6 @@ set -o nounset
 # Following resources are generated in ${KEYSTORES_DIR}
 # .
 # ├── alfresco
-# │ ├── keystore
 # │ ├── ssl.keystore
 # │ └── ssl.truststore
 # ├── client

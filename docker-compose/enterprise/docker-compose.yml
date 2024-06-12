@@ -239,7 +239,7 @@ services:
             BASEPATH: ./
 
     proxy:
-        image: quay.io/alfresco/alfresco-acs-nginx:${ACS_NGINX_TAG}
+        image: alfresco/alfresco-acs-nginx:${ACS_NGINX_TAG}
         mem_limit: 128m
         depends_on:
             - alfresco

@@ -31,6 +31,16 @@ As HTTPs invocations happen between different Alfresco services, following relat
   * Transform Service key must be generated and must be included in *Transform Service keystore* for every Transform Service present
   * Root CA certificate must be included in *Transform Service truststore* for every Transform Service present
 
+* Elasticsearch
+
+  * Elasticsearch key must be generated and must be included in *Elasticsearch keystore*
+  * Root CA certificate must be included in *Elasticsearch truststore*
+
+* Live Indexing
+
+  * Live Indexing key must be generated and must be included in *Live Indexing keystore*
+  * Root CA certificate must be included in *Live Indexing truststore*
+
 Additionally, to support Alfresco *encryption* feature, a metadata cyphering key is generated and included on a *keystore* to be used by the Repository.
 
 ## Usage

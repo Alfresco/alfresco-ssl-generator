@@ -46,5 +46,10 @@ call run_additional.cmd -servicename tengineTika -rootcapass kT9X6oe68t -keysize
 REM T-Engine Misc
 call run_additional.cmd -servicename tengineMisc -rootcapass kT9X6oe68t -keysize 2048 -keystoretype JCEKS -keystorepass kT9X6oe68t -truststoretype JCEKS -truststorepass kT9X6oe68t -certdname "/C=GB/ST=UK/L=Maidenhead/O=Alfresco Software Ltd./OU=Unknown/CN=T-Engine Misc" -servername localhost -alfrescoformat %ALFRESCO_FORMAT%
 
+REM Elasticsearch
+call run_additional.cmd -servicename elasticsearch -rootcapass kT9X6oe68t -keysize 2048 -keystoretype JCEKS -keystorepass kT9X6oe68t -truststoretype JCEKS -truststorepass kT9X6oe68t -certdname "/C=GB/ST=UK/L=Maidenhead/O=Alfresco Software Ltd./OU=Unknown/CN=Elasticsearch" -servername "localhost,elasticsearch" -alfrescoformat %ALFRESCO_FORMAT%
+REM Live Indexing
+call run_additional.cmd -servicename liveIndexing -rootcapass kT9X6oe68t -keysize 2048 -keystoretype JCEKS -keystorepass kT9X6oe68t -truststoretype JCEKS -truststorepass kT9X6oe68t -certdname "/C=GB/ST=UK/L=Maidenhead/O=Alfresco Software Ltd./OU=Unknown/CN=Live Indexing" -servername "localhost,live-indexing" -alfrescoformat %ALFRESCO_FORMAT%
+
 REM Custom T-Engine
 call run_additional.cmd -servicename tengineCustom -rootcapass kT9X6oe68t -keysize 2048 -keystoretype JCEKS -keystorepass kT9X6oe68t -truststoretype JCEKS -truststorepass kT9X6oe68t -certdname "/C=GB/ST=UK/L=Maidenhead/O=Alfresco Software Ltd./OU=Unknown/CN=T-Engine Custom" -servername "localhost,additional" -alfrescoformat %ALFRESCO_FORMAT%

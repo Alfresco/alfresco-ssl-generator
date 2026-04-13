@@ -43,6 +43,11 @@ bash ${SCRIPT_DIR}/../../ssl-tool/run_additional.sh -servicename tengineMisc -ro
 #Transform Aspose
 bash ${SCRIPT_DIR}/../../ssl-tool/run_additional.sh -servicename tAspose -rootcapass password -keysize 2048 -keystoretype JCEKS -keystorepass password -truststoretype JCEKS -truststorepass password -certdname "/C=GB/ST=UK/L=Maidenhead/O=Alfresco Software Ltd./OU=Unknown/CN=Transform Aspose" -servername test -alfrescoformat $ALFRESCO_FORMAT
 
+#Elasticsearch
+bash ${SCRIPT_DIR}/../../ssl-tool/run_additional.sh -servicename elasticsearch -rootcapass password -keysize 2048 -keystoretype JCEKS -keystorepass password -truststoretype JCEKS -truststorepass password -certdname "/C=GB/ST=UK/L=Maidenhead/O=Alfresco Software Ltd./OU=Unknown/CN=Elasticsearch" -servername test -alfrescoformat $ALFRESCO_FORMAT
+#Live Indexing
+bash ${SCRIPT_DIR}/../../ssl-tool/run_additional.sh -servicename liveIndexing -rootcapass password -keysize 2048 -keystoretype JCEKS -keystorepass password -truststoretype JCEKS -truststorepass password -certdname "/C=GB/ST=UK/L=Maidenhead/O=Alfresco Software Ltd./OU=Unknown/CN=Live Indexing" -servername test -alfrescoformat $ALFRESCO_FORMAT
+
 #AWS AI
 bash ${SCRIPT_DIR}/../../ssl-tool/run_additional.sh -servicename awsAi -rootcapass password -keysize 2048 -keystoretype JCEKS -keystorepass password -truststoretype JCEKS -truststorepass password -certdname "/C=GB/ST=UK/L=Maidenhead/O=Alfresco Software Ltd./OU=Unknown/CN=AWS AI" -servername test -alfrescoformat $ALFRESCO_FORMAT
 

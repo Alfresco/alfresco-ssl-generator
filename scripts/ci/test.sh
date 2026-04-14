@@ -40,7 +40,7 @@ bash ${SCRIPT_DIR}/../../ssl-tool/run_additional.sh -servicename transformRouter
 bash ${SCRIPT_DIR}/../../ssl-tool/run_additional.sh -servicename transformRouter -alias transformRouter_server -role server -rootcapass capass -keysize 2048 -keystoretype JCEKS -keystorepass transformrouterserverpass -truststoretype JCEKS -truststorepass transformrouterserverpass -certdname "/C=GB/ST=UK/L=Maidenhead/O=Alfresco Software Ltd./OU=Unknown/CN=Transform Router Server" -servername localhost -alfrescoformat $ALFRESCO_FORMAT
 
 echo "Generate elasticsearch"
-bash ${SCRIPT_DIR}/../../ssl-tool/run_additional.sh -servicename elasticsearch -rootcapass capass -keysize 2048 -keystoretype JCEKS -keystorepass elasticsearchkeystorepass -truststoretype JCEKS -truststorepass elasticsearchtruststorepass -certdname "/C=GB/ST=UK/L=Maidenhead/O=Alfresco Software Ltd./OU=Unknown/CN=Elasticsearch" -servername localhost,elasticsearch -alfrescoformat $ALFRESCO_FORMAT
+bash ${SCRIPT_DIR}/../../ssl-tool/run_additional.sh -servicename elasticsearch -rootcapass capass -keysize 2048 -keystoretype JKS -keystorepass elasticsearchkeystorepass -truststoretype JKS -truststorepass elasticsearchtruststorepass -certdname "/C=GB/ST=UK/L=Maidenhead/O=Alfresco Software Ltd./OU=Unknown/CN=Elasticsearch" -servername localhost,elasticsearch -alfrescoformat $ALFRESCO_FORMAT
 
 echo "Generate liveIndexing"
 bash ${SCRIPT_DIR}/../../ssl-tool/run_additional.sh -servicename liveIndexing -rootcapass capass -keysize 2048 -keystoretype JCEKS -keystorepass liveindexingkeystorepass -truststoretype JCEKS -truststorepass liveindexingtruststorepass -certdname "/C=GB/ST=UK/L=Maidenhead/O=Alfresco Software Ltd./OU=Unknown/CN=Live Indexing" -servername localhost,live-indexing -alfrescoformat $ALFRESCO_FORMAT
@@ -92,8 +92,8 @@ validateSubjectAlternativeNames keystores/transformRouter/transformRouter_server
 validateSubjectAlternativeNamesNotFound keystores/transformRouter/transformRouter_server.keystore transformrouterserverpass test
 
 echo "Checking elasticsearch"
-validateKeystore keystores/elasticsearch/elasticsearch.keystore elasticsearchkeystorepass JCEKS "elasticsearch" "ssl.alfresco.ca"
-validateTruststore keystores/elasticsearch/elasticsearch.truststore elasticsearchtruststorepass JCEKS "alfresco.ca"
+validateKeystore keystores/elasticsearch/elasticsearch.keystore elasticsearchkeystorepass JKS "elasticsearch" "ssl.alfresco.ca"
+validateTruststore keystores/elasticsearch/elasticsearch.truststore elasticsearchtruststorepass JKS "alfresco.ca"
 validateCertificate keystores/elasticsearch/elasticsearch.keystore elasticsearchkeystorepass "Owner: CN=Elasticsearch, OU=Unknown, O=Alfresco Software Ltd., ST=UK, C=GB"
 validateCertificate keystores/elasticsearch/elasticsearch.keystore elasticsearchkeystorepass "Issuer: CN=Custom Alfresco CA, OU=Unknown, O=Alfresco Software Ltd., L=Maidenhead, ST=UK, C=GB"
 validateSubjectAlternativeNames keystores/elasticsearch/elasticsearch.keystore elasticsearchkeystorepass localhost elasticsearch
